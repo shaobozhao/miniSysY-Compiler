@@ -48,7 +48,7 @@ int digit(string word, int pos){
 void token(string word){
     int pos = 0;
     while (pos < word.length()){
-        if (isalpha(word[pos])){
+        if (isalpha(word[pos]) || word[pos] == '_'){
             pos += letter(word, pos);
         }
         else if (isdigit(word[pos])){
