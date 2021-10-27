@@ -10,24 +10,39 @@ vector<string> FuncDef;
 vector<string> items;
 
 void process_number(string word){
-    bool decimal_octal=true;
+    bool decimal=(word=="0"||(word.length()>0&&word.at(0)!='0'));
+    bool octal=(word.length()>1&&word.at(0)=='0');
     bool hexadecimal=(word.length()>2&&word.at(0)=='0'&&(word.at(1)=='x'||word.at(1)=='X'));
-    for(int i=0;i<word.length();i++){
-        if(!isdigit(word.at(i))){
-            decimal_octal=false;
-            break;
+    int base;
+    if(decimal){
+        for(int i=0;i<word.length();i++){
+            if(!isdigit(word.at(i))){
+                decimal=false;
+                break;
+            }
         }
+        base=10;
+    }
+    if(octal){
+        for(int i=1;i<word.length();i++){
+            if(word.at(i)<'0'||word.at(i)>'7'){
+                octal=false;
+                break;
+            }
+        }
+        base=8;
     }
     if(hexadecimal){
         for(int i=2;i<word.length();i++){
-            if(!isdigit(word.at(i))||!(word.at(i)>='a'&&word.at(i)<='f')||!(word.at(i)>='A'&&word.at(i)<='F')){
+            if(!isdigit(word.at(i))&&!(word.at(i)>='a'&&word.at(i)<='f')&&!(word.at(i)>='A'&&word.at(i)<='F')){
                 hexadecimal=false;
                 break;
             }
         }
+        base=16;
     }
-    if(decimal_octal||hexadecimal){
-        items.push_back("i32 "+to_string(stoi(word)));
+    if(decimal||octal||hexadecimal){
+        items.push_back("i32 "+to_string(stoi(word,0,base)));
         FuncDef.push_back("Number");
     }
     else{
