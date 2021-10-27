@@ -14,6 +14,7 @@ void process_number(string word){
     bool octal=(word.length()>0&&word.at(0)=='0');
     bool hexadecimal=(word.length()>2&&word.at(0)=='0'&&(word.at(1)=='x'||word.at(1)=='X'));
     int base;
+    cout<<decimal<<" "<<octal<<" "<<hexadecimal<<endl;
     if(decimal){
         for(int i=0;i<word.length();i++){
             if(!isdigit(word.at(i))){
@@ -41,12 +42,14 @@ void process_number(string word){
         }
         base=16;
     }
+    cout<<decimal<<" "<<octal<<" "<<hexadecimal<<" "<<base<<endl;
     if(decimal||octal||hexadecimal){
-        items.push_back("i32 "+to_string(stoi(word,0,base)));
+        //items.push_back("i32 "+to_string(stoi(word,0,base)));
+        items.push_back("i32 "+to_string(base));
         FuncDef.push_back("Number");
     }
     else{
-        exit(-1);
+        exit(1);
     }
 }
 
