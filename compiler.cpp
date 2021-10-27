@@ -120,7 +120,9 @@ int main(int argc, char *argv[]){
     }
     if (isCompUnit()){
         for (int i = 0; i < items.size(); i++){
-            ir << items[i];
+            if(items[i] != ";"){
+                ir << items[i];
+            }
         }
     }
     else{
