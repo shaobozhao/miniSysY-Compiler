@@ -44,6 +44,7 @@ void process_number(string word){
     if (decimal || octal || hexadecimal){
         items.push_back("i32 " + to_string(stoi(word, 0, base)));
         FuncDef.push_back("Number");
+        cout<<stoi(word, 0, base)<<endl;
     }
     else{
         exit(1);
@@ -77,11 +78,11 @@ void process(string word){
         FuncDef.push_back(word);
     }
     else if (isdigit(word.at(0))){
-        if (word.at(word.length() - 1) == ';'){
+        if (word.length() > 1 && word.at(word.length() - 1) == ';'){
             process_number(word.substr(0, word.length() - 1));
             process(";");
         }
-        else if (word.at(word.length() - 2) == ';' && word.at(word.length() - 1) == '}'){
+        else if (word.length() > 2 && word.at(word.length() - 2) == ';' && word.at(word.length() - 1) == '}'){
             process_number(word.substr(0, word.length() - 2));
             process(";");
             process("}");
