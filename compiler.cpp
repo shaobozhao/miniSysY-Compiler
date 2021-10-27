@@ -59,11 +59,11 @@ void process(string word){
         items.push_back("@main");
         FuncDef.push_back("Ident");
         if (word.length() > 4){
-            size_t rtn_location = word.find("return",4);
-            for(int i=4;i<min(rtn_location,word.length());i++){
-                process(word.substr(i,1));
+            size_t rtn_location = word.find("return", 4);
+            for (int i = 4; i < min(rtn_location, word.length()); i++){
+                process(word.substr(i, 1));
             }
-            if(rtn_location!=string::npos){
+            if (rtn_location != string::npos){
                 process(word.substr(rtn_location));
             }
         }
@@ -81,7 +81,7 @@ void process(string word){
             process_number(word.substr(0, word.length() - 1));
             process(";");
         }
-        else if (word.at(word.length() - 2) == ';'&&word.at(word.length() - 1) == '}'){
+        else if (word.at(word.length() - 2) == ';' && word.at(word.length() - 1) == '}'){
             process_number(word.substr(0, word.length() - 2));
             process(";");
             process("}");
@@ -98,7 +98,7 @@ void process(string word){
 bool isCompUnit(){
     bool Stmt = (FuncDef[5] == "return") && (FuncDef[6] == "Number") && (FuncDef[7] == ";");
     bool Block = (FuncDef[4] == "{") && Stmt && (FuncDef[8] == "}");
-    return (FuncDef[0] == "FuncType") && (FuncDef[1] == "Ident") && (FuncDef[2] == "(") && (FuncDef[3] == ")") && Block;
+    return (FuncDef.size() == 9) && (FuncDef[0] == "FuncType") && (FuncDef[1] == "Ident") && (FuncDef[2] == "(") && (FuncDef[3] == ")") && Block;
 }
 
 int main(int argc, char *argv[]){
@@ -111,7 +111,8 @@ int main(int argc, char *argv[]){
         cout << line << endl;
         istringstream line_split(line);
         string word;
-        while (line_split >> word){
+        while (line_split >> word)
+        {
             process(word);
         }
         line_split.str("");
