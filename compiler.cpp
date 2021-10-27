@@ -68,7 +68,7 @@ void process(string word){
             }
         }
     }
-    else if (word == "(" || word == ")" || word == "{" || word == "}" || word == ";"){
+    else if (word == "(" || word == ")" || word == "{" || word == "}"){
         items.push_back(word);
         FuncDef.push_back(word);
     }
@@ -90,6 +90,9 @@ void process(string word){
             process_number(word);
         }
     }
+    else if (word == ";"){
+        FuncDef.push_back(word);
+    }
     else{
         exit(1);
     }
@@ -108,7 +111,7 @@ int main(int argc, char *argv[]){
     ir.open(argv[2]);
     string line;
     while (getline(input, line)){
-        cout<<line<<endl;
+        //cout<<line<<endl;
         istringstream line_split(line);
         string word;
         while (line_split >> word)
@@ -120,9 +123,7 @@ int main(int argc, char *argv[]){
     }
     if (isCompUnit()){
         for (int i = 0; i < items.size(); i++){
-            if(items[i] != ";"){
-                ir << items[i];
-            }
+            ir << items[i];
         }
     }
     else{
