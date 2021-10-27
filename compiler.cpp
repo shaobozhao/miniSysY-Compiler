@@ -46,7 +46,7 @@ void process_number(string word){
         FuncDef.push_back("Number");
     }
     else{
-        exit(1);
+        exit(-1);
     }
 }
 
@@ -84,7 +84,7 @@ void process(string word){
         }
     }
     else{
-        exit(2);
+        exit(1);
     }
 }
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]){
         }
     }
     else{
-        exit(3);
+        exit(1);
     }
     input.close();
     ir.close();
