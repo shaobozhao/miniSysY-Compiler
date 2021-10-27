@@ -108,6 +108,7 @@ int main(int argc, char *argv[]){
     ir.open(argv[2]);
     string line;
     while (getline(input, line)){
+        cout<<line<<endl;
         istringstream line_split(line);
         string word;
         while (line_split >> word)
