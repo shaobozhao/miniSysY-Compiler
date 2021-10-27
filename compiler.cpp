@@ -10,8 +10,8 @@ vector<string> FuncDef;
 vector<string> items;
 
 void process_number(string word){
-    bool decimal=(word=="0"||(word.length()>0&&word.at(0)!='0'));
-    bool octal=(word.length()>1&&word.at(0)=='0');
+    bool decimal=(word.at(0)!='0');
+    bool octal=(word.length()>0&&word.at(0)=='0');
     bool hexadecimal=(word.length()>2&&word.at(0)=='0'&&(word.at(1)=='x'||word.at(1)=='X'));
     int base;
     if(decimal){
@@ -101,6 +101,7 @@ int main(int argc, char *argv[]){
     ir.open(argv[2]);
     string line;
     while(getline(input,line)){
+        ir<<line<<endl;
         istringstream line_split(line);
         string word;
         while (line_split >> word){
