@@ -46,7 +46,9 @@ void process_number(string word){
         FuncDef.push_back("Number");
     }
     else{
-        exit(1);
+        //exit(1);
+        items.push_back("i32 -1");
+        FuncDef.push_back("Number");
     }
 }
 
@@ -101,7 +103,6 @@ int main(int argc, char *argv[]){
     ir.open(argv[2]);
     string line;
     while(getline(input,line)){
-        ir<<line<<endl;
         istringstream line_split(line);
         string word;
         while (line_split >> word){
