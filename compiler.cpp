@@ -122,7 +122,7 @@ void check_note_start(string word){
 }
 
 void check_multi_note_end(string word){
-    size_t multi_end_location = word.find("/*");
+    size_t multi_end_location = word.find("*/");
     if (multi_end_location != string::npos){
         if (word != "*/" && multi_end_location < word.length() - 2){
             process(word.substr(multi_end_location + 2));
