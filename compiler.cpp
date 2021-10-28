@@ -9,6 +9,9 @@ using namespace std;
 vector<string> FuncDef;
 vector<string> items;
 
+bool single_line_note = false;
+bool multi_line_note = false;
+
 void process_number(string word){
     bool decimal = (word.at(0) != '0');
     bool octal = (word.length() > 0 && word.at(0) == '0');
@@ -98,6 +101,34 @@ void process(string word){
     }
 }
 
+void check_note_start(string word){
+    if (word.find("//") != string::npos){
+        if (word != "//"){
+            process(word.substr(0, word.find("//")));
+        }
+        single_line_note == true;
+    }
+    else if (word.find("/*") != string::npos){
+        if (word != "/*"){
+            process(word.substr(0, word.find("/*")));
+        }
+        multi_line_note == true;
+    }
+    else{
+        process(word);
+    }
+}
+
+void check_multi_note_end(string word){
+    if (word.find("*/") != string::npos){
+        if (word != "*/"){
+            process(word.substr(word.find("*/") + 2));
+        }
+        single_line_note == false;
+        return;
+    }
+}
+
 bool isCompUnit(){
     bool Stmt = (FuncDef[5] == "return") && (FuncDef[6] == "Number") && (FuncDef[7] == ";");
     bool Block = (FuncDef[4] == "{") && Stmt && (FuncDef[8] == "}");
@@ -111,17 +142,23 @@ int main(int argc, char *argv[]){
     ir.open(argv[2]);
     string line;
     while (getline(input, line)){
-        //cout<<line<<endl;
+        cout<<line<<endl;
         istringstream line_split(line);
         string word;
-        while (line_split >> word)
-        {
-            process(word);
+        while (line_split >> word){
+            if (!single_line_note && !multi_line_note){
+                check_note_start(word);
+            }
+            else if (!single_line_note && multi_line_note){
+                check_multi_note_end(word);
+            }
+            else;
         }
         line_split.str("");
         items.push_back("\n");
+        single_line_note = false;
     }
-    if (isCompUnit()){
+    if (isCompUnit() && !multi_line_note){
         for (int i = 0; i < items.size(); i++){
             ir << items[i];
         }
