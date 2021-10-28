@@ -102,15 +102,17 @@ void process(string word){
 }
 
 void check_note_start(string word){
-    if (word.find("//") != string::npos){
-        if (word != "//"){
-            process(word.substr(0, word.find("//")));
+    size_t single_start_location = word.find("//");
+    size_t multi_start_location = word.find("/*");
+    if (single_start_location != string::npos){
+        if (word != "//" && single_start_location != 0){
+            process(word.substr(0, single_start_location));
         }
         single_line_note = true;
     }
-    else if (word.find("/*") != string::npos){
-        if (word != "/*"){
-            process(word.substr(0, word.find("/*")));
+    else if (multi_start_location != string::npos){
+        if (word != "/*" && multi_start_location != 0){
+            process(word.substr(0, multi_start_location));
         }
         multi_line_note = true;
     }
@@ -120,9 +122,10 @@ void check_note_start(string word){
 }
 
 void check_multi_note_end(string word){
-    if (word.find("*/") != string::npos){
-        if (word != "*/"){
-            process(word.substr(word.find("*/") + 2));
+    size_t multi_end_location = word.find("/*");
+    if (multi_end_location != string::npos){
+        if (word != "*/" && multi_end_location < word.length() - 2){
+            process(word.substr(multi_end_location + 2));
         }
         multi_line_note = false;
         return;
@@ -143,10 +146,11 @@ int main(int argc, char *argv[]){
     string line;
     multi_line_note = false;
     while (getline(input, line)){
-        cout<<line<<endl;
+        //cout<<line<<endl;
         istringstream line_split(line);
         string word;
         while (line_split >> word){
+            //cout<<word<<endl;
             if (!single_line_note && !multi_line_note){
                 check_note_start(word);
             }
@@ -157,7 +161,6 @@ int main(int argc, char *argv[]){
         }
         line_split.str("");
         items.push_back("\n");
-        cout<<multi_line_note<<endl;
         single_line_note = false;
     }
     if (isCompUnit() && !multi_line_note){
