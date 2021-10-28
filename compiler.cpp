@@ -146,7 +146,7 @@ int main(int argc, char *argv[]){
     string line;
     multi_line_note = false;
     while (getline(input, line)){
-        //cout<<line<<endl;
+        cout<<line<<endl;
         istringstream line_split(line);
         string word;
         while (line_split >> word){
