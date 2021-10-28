@@ -9,8 +9,8 @@ using namespace std;
 vector<string> FuncDef;
 vector<string> items;
 
-bool single_line_note = false;
-bool multi_line_note = false;
+bool single_line_note;
+bool multi_line_note;
 
 void process_number(string word){
     bool decimal = (word.at(0) != '0');
@@ -106,13 +106,14 @@ void check_note_start(string word){
         if (word != "//"){
             process(word.substr(0, word.find("//")));
         }
-        single_line_note == true;
+        single_line_note = true;
     }
     else if (word.find("/*") != string::npos){
         if (word != "/*"){
             process(word.substr(0, word.find("/*")));
         }
-        multi_line_note == true;
+        multi_line_note = true;
+        cout<<"hello "<<multi_line_note<<endl;
     }
     else{
         process(word);
@@ -124,7 +125,7 @@ void check_multi_note_end(string word){
         if (word != "*/"){
             process(word.substr(word.find("*/") + 2));
         }
-        single_line_note == false;
+        single_line_note = false;
         return;
     }
 }
@@ -141,6 +142,7 @@ int main(int argc, char *argv[]){
     ofstream ir;
     ir.open(argv[2]);
     string line;
+    multi_line_note = false;
     while (getline(input, line)){
         cout<<line<<endl;
         istringstream line_split(line);
@@ -156,6 +158,7 @@ int main(int argc, char *argv[]){
         }
         line_split.str("");
         items.push_back("\n");
+        cout<<multi_line_note<<endl;
         single_line_note = false;
     }
     if (isCompUnit() && !multi_line_note){
