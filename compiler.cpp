@@ -113,7 +113,6 @@ void check_note_start(string word){
             process(word.substr(0, word.find("/*")));
         }
         multi_line_note = true;
-        cout<<"hello "<<multi_line_note<<endl;
     }
     else{
         process(word);
@@ -125,7 +124,7 @@ void check_multi_note_end(string word){
         if (word != "*/"){
             process(word.substr(word.find("*/") + 2));
         }
-        single_line_note = false;
+        multi_line_note = false;
         return;
     }
 }
