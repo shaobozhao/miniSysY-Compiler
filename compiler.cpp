@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<string> FuncDef;
+vector<string> syms;
 vector<string> items;
 
 bool single_line_note;
@@ -36,16 +36,16 @@ int process_word(string token, int pos){
     }
     /*else */if (word == "return"){
         items.push_back("ret ");
-        FuncDef.push_back(word);
+        syms.push_back(word);
     }
     else{
         if (word == "int"){
             items.push_back("define dso_local i32 ");
-            FuncDef.push_back("FuncType");
+            syms.push_back(word);
         }
         else if (word == "main"){
             items.push_back("@main");
-            FuncDef.push_back("Ident");
+            syms.push_back(word);
         }
         else{
             exit(1);
@@ -94,7 +94,7 @@ int process_number(string token, int pos){
     }
     if (decimal || octal || hexadecimal){
         items.push_back("i32 " + to_string(stoi(number, 0, base)));
-        FuncDef.push_back("Number");
+        syms.push_back("Number");
     }
     else{
         exit(1);
@@ -113,7 +113,7 @@ void process(string token){
         }
         else if (token.at(pos) == '(' || token.at(pos) == ')' || token.at(pos) == '{' || token.at(pos) == '}'){
             items.push_back(string(1, token.at(pos)));
-            FuncDef.push_back(string(1, token.at(pos)));
+            syms.push_back(string(1, token.at(pos)));
             pos++;
         }
         /*else if (word[pos] == '+'){
@@ -147,7 +147,7 @@ void process(string token){
             }
         }*/
         else if (token.at(pos) == ';'){
-            FuncDef.push_back(";");
+            syms.push_back(";");
             pos++;
         }
         else{
@@ -187,10 +187,83 @@ void check_multi_note_end(string token){
     }
 }
 
-bool isCompUnit(){
-    bool Stmt = (FuncDef[5] == "return") && (FuncDef[6] == "Number") && (FuncDef[7] == ";");
-    bool Block = (FuncDef[4] == "{") && Stmt && (FuncDef[8] == "}");
-    return (FuncDef.size() == 9) && (FuncDef[0] == "FuncType") && (FuncDef[1] == "Ident") && (FuncDef[2] == "(") && (FuncDef[3] == ")") && Block;
+vector<string>::iterator sym;
+
+void Stmt(){
+    if (*sym == "return"){
+        sym++;
+        if (*sym == "Number"){
+            sym++;
+            if (*sym == ";"){
+                sym++;
+            }
+            else{
+                exit(1);
+            }
+        }
+        else{
+            exit(1);
+        }
+    }
+    else{
+        exit(1);
+    }
+}
+
+void Block(){
+    if (*sym == "{"){
+        sym++;
+        Stmt();
+        if (*sym == "}"){
+            sym++;
+        }
+        else{
+            exit(1);
+        }
+    }
+    else{
+        exit(1);
+    }
+}
+
+void Ident(){
+    if (*sym == "main"){
+        sym++;
+    }
+    else{
+        exit(1);
+    }
+}
+
+void FuncType(){
+    if (*sym == "int"){
+        sym++;
+    }
+    else{
+        exit(1);
+    }
+}
+
+void FuncDef(){
+    FuncType();
+    Ident();
+    if (*sym == "("){
+        sym++;
+        if (*sym == ")"){
+            sym++;
+        }
+        else{
+            exit(1);
+        }
+    }
+    else{
+        exit(1);
+    }
+    Block();
+}
+
+void CompUnit(){
+    FuncDef();
 }
 
 int main(int argc, char *argv[]){
@@ -219,7 +292,9 @@ int main(int argc, char *argv[]){
         items.push_back("\n");
         single_line_note = false;
     }
-    if (isCompUnit() && !multi_line_note){
+    sym = syms.begin();
+    CompUnit();
+    if (sym == syms.end() && !multi_line_note){
         for (int i = 0; i < items.size(); i++){
             ir << items[i];
         }
