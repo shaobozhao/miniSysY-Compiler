@@ -12,53 +12,13 @@ vector<string> items;
 bool single_line_note;
 bool multi_line_note;
 
-void process_number(string word){
-    bool decimal = (word.at(0) != '0');
-    bool octal = (word.length() > 0 && word.at(0) == '0');
-    bool hexadecimal = (word.length() > 2 && word.at(0) == '0' && (word.at(1) == 'x' || word.at(1) == 'X'));
-    int base;
-    if (decimal){
-        for (int i = 0; i < word.length(); i++){
-            if (!isdigit(word.at(i))){
-                decimal = false;
-                break;
-            }
-        }
-        base = 10;
-    }
-    if (octal){
-        for (int i = 1; i < word.length(); i++){
-            if (word.at(i) < '0' || word.at(i) > '7'){
-                octal = false;
-                break;
-            }
-        }
-        base = 8;
-    }
-    if (hexadecimal){
-        for (int i = 2; i < word.length(); i++){
-            if (!isdigit(word.at(i)) && !(word.at(i) >= 'a' && word.at(i) <= 'f') && !(word.at(i) >= 'A' && word.at(i) <= 'F')){
-                hexadecimal = false;
-                break;
-            }
-        }
-        base = 16;
-    }
-    if (decimal || octal || hexadecimal){
-        items.push_back("i32 " + to_string(stoi(word, 0, base)));
-        FuncDef.push_back("Number");
-    }
-    else{
-        exit(1);
-    }
-}
-
-int letter(string word, int pos){
-    string letters;
-    while (pos < word.length() && (isalnum(word[pos]) || word[pos] == '_')){
-        letters.push_back(word[pos]);
+int process_word(string token, int pos){
+    string word;
+    while (pos < token.length() && (isalnum(token.at(pos)) || token.at(pos) == '_')){
+        word.push_back(token.at(pos));
         pos++;
     }
+
     /*if (letters == "if"){
         printf("If\n");
     }
@@ -74,18 +34,16 @@ int letter(string word, int pos){
     else if (letters == "continue"){
         printf("Continue\n");
     }
-    /*else */if (letters == "return"){
-        //printf("Return\n");
+    /*else */if (word == "return"){
         items.push_back("ret ");
-        FuncDef.push_back(letters);
+        FuncDef.push_back(word);
     }
     else{
-        //printf("Ident(%s)\n", letters.c_str());
-        if (letters == "int"){
+        if (word == "int"){
             items.push_back("define dso_local i32 ");
             FuncDef.push_back("FuncType");
         }
-        else if (letters == "main"){
+        else if (word == "main"){
             items.push_back("@main");
             FuncDef.push_back("Ident");
         }
@@ -93,36 +51,69 @@ int letter(string word, int pos){
             exit(1);
         }
     }
-    return letters.length();
+    return word.length();
 }
 
-int digit(string word, int pos){
+int process_number(string token, int pos){
     string number;
-    while (pos < word.length() && isalnum(word[pos])){
-        number.push_back(word[pos]);
+    while (pos < token.length() && isalnum(token.at(pos))){
+        number.push_back(token.at(pos));
         pos++;
     }
-    //printf("Number(%s)\n", number.c_str());
-    process_number(number);
+
+    bool decimal = (number.at(0) != '0');
+    bool octal = (number.length() > 0 && number.at(0) == '0');
+    bool hexadecimal = (number.length() > 2 && number.at(0) == '0' && (number.at(1) == 'x' || number.at(1) == 'X'));
+    int base;
+    if (decimal){
+        for (int i = 0; i < number.length(); i++){
+            if (!isdigit(number.at(i))){
+                decimal = false;
+                break;
+            }
+        }
+        base = 10;
+    }
+    if (octal){
+        for (int i = 1; i < number.length(); i++){
+            if (number.at(i) < '0' || number.at(i) > '7'){
+                octal = false;
+                break;
+            }
+        }
+        base = 8;
+    }
+    if (hexadecimal){
+        for (int i = 2; i < number.length(); i++){
+            if (!isdigit(number.at(i)) && !(number.at(i) >= 'a' && number.at(i) <= 'f') && !(number.at(i) >= 'A' && number.at(i) <= 'F')){
+                hexadecimal = false;
+                break;
+            }
+        }
+        base = 16;
+    }
+    if (decimal || octal || hexadecimal){
+        items.push_back("i32 " + to_string(stoi(number, 0, base)));
+        FuncDef.push_back("Number");
+    }
+    else{
+        exit(1);
+    }
     return number.length();
 }
 
-void process(string word){
+void process(string token){
     int pos = 0;
-    while (pos < word.length()){
-        if (isalpha(word[pos]) || word[pos] == '_'){
-            pos += letter(word, pos);
+    while (pos < token.length()){
+        if (isalpha(token.at(pos)) || token.at(pos) == '_'){
+            pos += process_word(token, pos);
         }
-        else if (isdigit(word[pos])){
-            pos += digit(word, pos);
+        else if (isdigit(token.at(pos))){
+            pos += process_number(token, pos);
         }
-        else if (word[pos] == '(' || word[pos] == ')' || word[pos] == '{' || word[pos] == '}'){
-            /*printf("LPar\n");
-            printf("RPar\n");
-            printf("LBrace\n");
-            printf("RBrace\n");*/
-            items.push_back(string(1, word[pos]));
-            FuncDef.push_back(string(1, word[pos]));
+        else if (token.at(pos) == '(' || token.at(pos) == ')' || token.at(pos) == '{' || token.at(pos) == '}'){
+            items.push_back(string(1, token.at(pos)));
+            FuncDef.push_back(string(1, token.at(pos)));
             pos++;
         }
         /*else if (word[pos] == '+'){
@@ -155,43 +146,41 @@ void process(string word){
                 pos++;
             }
         }*/
-        else if (word[pos] == ';'){
-            //printf("Semicolon\n");
+        else if (token.at(pos) == ';'){
             FuncDef.push_back(";");
             pos++;
         }
         else{
-            //printf("Err\n");
             exit(1);
         }
     }
 }
 
-void check_note_start(string word){
-    size_t single_start_location = word.find("//");
-    size_t multi_start_location = word.find("/*");
+void check_note_start(string token){
+    size_t single_start_location = token.find("//");
+    size_t multi_start_location = token.find("/*");
     if (single_start_location != string::npos){
-        if (word != "//" && single_start_location != 0){
-            process(word.substr(0, single_start_location));
+        if (token != "//" && single_start_location != 0){
+            process(token.substr(0, single_start_location));
         }
         single_line_note = true;
     }
     else if (multi_start_location != string::npos){
-        if (word != "/*" && multi_start_location != 0){
-            process(word.substr(0, multi_start_location));
+        if (token != "/*" && multi_start_location != 0){
+            process(token.substr(0, multi_start_location));
         }
         multi_line_note = true;
     }
     else{
-        process(word);
+        process(token);
     }
 }
 
-void check_multi_note_end(string word){
-    size_t multi_end_location = word.find("*/");
+void check_multi_note_end(string token){
+    size_t multi_end_location = token.find("*/");
     if (multi_end_location != string::npos){
-        if (word != "*/" && multi_end_location < word.length() - 2){
-            process(word.substr(multi_end_location + 2));
+        if (token != "*/" && multi_end_location < token.length() - 2){
+            process(token.substr(multi_end_location + 2));
         }
         multi_line_note = false;
         return;
@@ -214,15 +203,15 @@ int main(int argc, char *argv[]){
     while (getline(input, line)){
         //cout << line << endl;
         istringstream line_split(line);
-        string word;
-        while (line_split >> word){
-            //cout << word << endl;
+        string token;
+        while (line_split >> token){
+            //cout << token << endl;
             if (!single_line_note && !multi_line_note){
-                check_note_start(word);
-                check_multi_note_end(word);
+                check_note_start(token);
+                check_multi_note_end(token);
             }
             else if (!single_line_note && multi_line_note){
-                check_multi_note_end(word);
+                check_multi_note_end(token);
             }
             else;
         }
