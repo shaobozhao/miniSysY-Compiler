@@ -332,8 +332,10 @@ void FuncDef(){
     FuncType();
     Ident();
     if (*sym == "("){
+        items.push_back("(");
         sym++;
         if (*sym == ")"){
+            items.push_back(")");
             sym++;
         }
         else{
