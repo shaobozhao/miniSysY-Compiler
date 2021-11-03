@@ -272,7 +272,6 @@ int main(int argc, char *argv[]){
     ofstream ir;
     ir.open(argv[2]);
     string line;
-    multi_line_note = false;
     while (getline(input, line)){
         //cout << line << endl;
         istringstream line_split(line);
