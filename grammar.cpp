@@ -66,9 +66,12 @@ void Ident(){
     }
 }
 
+stack<string> registers;
+
 void Block(){
     if (*sym == "{"){
         items.push_back("{\n");
+        registers.push("main");
         sym++;
         Stmt();
         if (*sym == "}"){
@@ -85,14 +88,13 @@ void Block(){
 }
 
 string rtn;
-stack<string> registers;
 
 void Stmt(){
     if (*sym == "return"){
         sym++;
         Exp();
         if (*sym == ";"){
-            items.push_back("ret i32 " + rtn + "\n");
+            items.push_back("    ret i32 " + rtn + "\n");
             sym++;
         }
         else{
@@ -108,23 +110,7 @@ bool isNumber(const string &str){
     return str.find_first_not_of("0123456789") == string::npos;
 }
 
-/*bool cmp(const string &left, const string &right){
-
-}*/
-
 void Exp(){
-    /*stack<string> variety;
-    while (*sym != ";" && sym != syms.end()){
-        if ((*sym == "+") && (variety.empty() || !(isNumber(variety.top()) || variety.top() == ")"))){
-            *sym = "plus";
-        }
-        if ((*sym == "-") && (variety.empty() || !(isNumber(variety.top()) || variety.top() == ")"))){
-            *sym = "minus";
-        }
-        variety.push(*sym);
-        cout << *sym + " " << endl;
-        sym++;
-    }*/
     AddExp();
 }
 
@@ -137,14 +123,15 @@ void AddExp(){
         sym++;
         MulExp();
         var2 = rtn;
+        int new_reg = registers.size();
         if (op == "+"){
-            items.push_back("%x" + to_string(registers.size() + 1) + " = add i32 " + var1 + ", " + var2 + "\n");
+            items.push_back("    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
         }
         if (op == "-"){
-            items.push_back("%x" + to_string(registers.size() + 1) + " = sub i32 " + var1 + ", " + var2 + "\n");
+            items.push_back("    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 + "\n");
         }
         registers.push(var1 + op + var2);
-        rtn = "%x" + to_string(registers.size());
+        rtn = "%" + to_string(new_reg);
     }
 }
 
@@ -157,17 +144,18 @@ void MulExp(){
         sym++;
         UnaryExp();
         var2 = rtn;
+        int new_reg = registers.size();
         if (op == "*"){
-            items.push_back("%x" + to_string(registers.size() + 1) + " = mul i32 " + var1 + ", " + var2 + "\n");
+            items.push_back("    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 + "\n");
         }
         if (op == "/"){
-            items.push_back("%x" + to_string(registers.size() + 1) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
+            items.push_back("    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
         }
         if (op == "%"){
-            items.push_back("%x" + to_string(registers.size() + 1) + " = srem i32 " + var1 + ", " + var2 + "\n");
+            items.push_back("    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 + "\n");
         }
         registers.push(var1 + op + var2);
-        rtn = "%x" + to_string(registers.size());
+        rtn = "%" + to_string(new_reg);
     }
 }
 
@@ -180,9 +168,10 @@ void UnaryExp(){
         UnaryOp();
         UnaryExp();
         if (minus){
-            items.push_back("%x" + to_string(registers.size() + 1) + " = sub i32 0, " + rtn + "\n");
+            int new_reg = registers.size();
+            items.push_back("    %" + to_string(new_reg) + " = sub i32 0, " + rtn + "\n");
             registers.push("-" + rtn);
-            rtn = "%x" + to_string(registers.size());
+            rtn = "%" + to_string(new_reg);
         }
     }
     else{
@@ -195,7 +184,6 @@ void PrimaryExp(){
         sym++;
         Exp();
         if (*sym == ")"){
-            //rtn = "%x" + to_string(registers.size());
             sym++;
         }
         else{
