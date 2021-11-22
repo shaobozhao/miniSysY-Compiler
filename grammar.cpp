@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
+#include <stack>
 
 using namespace std;
 
@@ -83,14 +84,15 @@ void Block(){
     }
 }
 
-int rtn, sign = 1;
+string rtn;
+stack<string> registers;
 
 void Stmt(){
     if (*sym == "return"){
         sym++;
         Exp();
         if (*sym == ";"){
-            items.push_back("ret i32 " + to_string(sign * rtn) + "\n");
+            items.push_back("ret i32 " + rtn + "\n");
             sym++;
         }
         else{
@@ -102,25 +104,89 @@ void Stmt(){
     }
 }
 
+bool isNumber(const string &str){
+    return str.find_first_not_of("0123456789") == string::npos;
+}
+
+/*bool cmp(const string &left, const string &right){
+
+}*/
+
 void Exp(){
+    /*stack<string> variety;
+    while (*sym != ";" && sym != syms.end()){
+        if ((*sym == "+") && (variety.empty() || !(isNumber(variety.top()) || variety.top() == ")"))){
+            *sym = "plus";
+        }
+        if ((*sym == "-") && (variety.empty() || !(isNumber(variety.top()) || variety.top() == ")"))){
+            *sym = "minus";
+        }
+        variety.push(*sym);
+        cout << *sym + " " << endl;
+        sym++;
+    }*/
     AddExp();
 }
 
 void AddExp(){
     MulExp();
+    string var1, var2;
+    while (*sym == "+" || *sym == "-"){
+        var1 = rtn;
+        string op = *sym;
+        sym++;
+        MulExp();
+        var2 = rtn;
+        if (op == "+"){
+            items.push_back("%x" + to_string(registers.size() + 1) + " = add i32 " + var1 + ", " + var2 + "\n");
+        }
+        if (op == "-"){
+            items.push_back("%x" + to_string(registers.size() + 1) + " = sub i32 " + var1 + ", " + var2 + "\n");
+        }
+        registers.push(var1 + op + var2);
+        rtn = "%x" + to_string(registers.size());
+    }
 }
 
 void MulExp(){
     UnaryExp();
+    string var1, var2;
+    while (*sym == "*" || *sym == "/" || *sym == "%"){
+        var1 = rtn;
+        string op = *sym;
+        sym++;
+        UnaryExp();
+        var2 = rtn;
+        if (op == "*"){
+            items.push_back("%x" + to_string(registers.size() + 1) + " = mul i32 " + var1 + ", " + var2 + "\n");
+        }
+        if (op == "/"){
+            items.push_back("%x" + to_string(registers.size() + 1) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
+        }
+        if (op == "%"){
+            items.push_back("%x" + to_string(registers.size() + 1) + " = srem i32 " + var1 + ", " + var2 + "\n");
+        }
+        registers.push(var1 + op + var2);
+        rtn = "%x" + to_string(registers.size());
+    }
 }
 
 void UnaryExp(){
-    if (*sym == "(" || (*sym).substr(0, 6) == "Number"){
+    if (*sym == "(" || isNumber(*sym)){
         PrimaryExp();
     }
     else if (*sym == "+" || *sym == "-"){
+        bool minus = *sym == "-";
         UnaryOp();
         UnaryExp();
+        if (minus){
+            items.push_back("%x" + to_string(registers.size() + 1) + " = sub i32 0, " + rtn + "\n");
+            registers.push("-" + rtn);
+            rtn = "%x" + to_string(registers.size());
+        }
+    }
+    else{
+        exit(1);
     }
 }
 
@@ -129,14 +195,15 @@ void PrimaryExp(){
         sym++;
         Exp();
         if (*sym == ")"){
+            rtn = "%x" + to_string(registers.size());
             sym++;
         }
         else{
             exit(1);
         }
     }
-    else if ((*sym).substr(0, 6) == "Number"){
-        rtn = stoi((*sym).substr(7));
+    else if (isNumber(*sym)){
+        rtn = *sym;
         sym++;
     }
     else{
@@ -146,9 +213,6 @@ void PrimaryExp(){
 
 void UnaryOp(){
     if (*sym == "+" || *sym == "-"){
-        if (*sym == "-"){
-            sign = -sign;
-        }
         sym++;
     }
     else{

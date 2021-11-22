@@ -84,7 +84,7 @@ int process_number(string token, int pos){
         base = 16;
     }
     if (decimal || octal || hexadecimal){
-        syms.push_back("Number_" + to_string(stoi(number, 0, base)));
+        syms.push_back(to_string(stoi(number, 0, base)));
     }
     else{
         exit(1);
@@ -105,19 +105,11 @@ void process(string token){
             syms.push_back(string(1, token.at(pos)));
             pos++;
         }
-        else if (token.at(pos) == '+' || token.at(pos) == '-'){
+        else if (token.at(pos) == '+' || token.at(pos) == '-' || token.at(pos) == '*' || token.at(pos) == '/' || token.at(pos) == '%'){
             syms.push_back(string(1, token.at(pos)));
             pos++;
         }
         /*
-        else if (word[pos] == '*'){
-            printf("Mult\n");
-            pos++;
-        }
-        else if (word[pos] == '/'){
-            printf("Div\n");
-            pos++;
-        }
         else if (word[pos] == '<'){
             printf("Lt\n");
             pos++;
