@@ -195,7 +195,7 @@ void PrimaryExp(){
         sym++;
         Exp();
         if (*sym == ")"){
-            rtn = "%x" + to_string(registers.size());
+            //rtn = "%x" + to_string(registers.size());
             sym++;
         }
         else{
