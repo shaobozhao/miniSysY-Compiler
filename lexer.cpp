@@ -12,36 +12,7 @@ int process_word(string token, int pos){
         word.push_back(token.at(pos));
         pos++;
     }
-
-    /*if (letters == "if"){
-        printf("If\n");
-    }
-    else if (letters == "else"){
-        printf("Else\n");
-    }
-    else if (letters == "while"){
-        printf("While\n");
-    }
-    else if (letters == "break"){
-        printf("Break\n");
-    }
-    else if (letters == "continue"){
-        printf("Continue\n");
-    }
-    /*else */if (word == "return"){
-        syms.push_back(word);
-    }
-    else{
-        if (word == "int"){
-            syms.push_back(word);
-        }
-        else if (word == "main"){
-            syms.push_back(word);
-        }
-        else{
-            exit(1);
-        }
-    }
+    syms.push_back(word);
     return word.length();
 }
 
@@ -118,17 +89,21 @@ void process(string token){
             printf("Gt\n");
             pos++;
         }
-        else if (word[pos] == '='){
-            if (pos < word.length() - 1 && word[pos + 1] == '='){
+        */
+        else if (token.at(pos) == '='){
+            /*if (pos < word.length() - 1 && word[pos + 1] == '='){
                 printf("Eq\n");
                 pos += 2;
             }
-            else{
-                printf("Assign\n");
+            else{*/
+                syms.push_back("=");
                 pos++;
-            }
+            //}
         }
-        */
+        else if (token.at(pos) == ','){
+            syms.push_back(",");
+            pos++;
+        }
         else if (token.at(pos) == ';'){
             syms.push_back(";");
             pos++;
