@@ -49,7 +49,7 @@ void AddExp(vector<element> &elements, bool isConst);
 void MulExp(vector<element> &elements, bool isConst);
 void UnaryExp(vector<element> &elements, bool isConst);
 void PrimaryExp(vector<element> &elements, bool isConst);
-void FuncRParams(vector<element> &elements, function func, string params, bool isConst);
+void FuncRParams(vector<element> &elements, function func, string &params, bool isConst);
 void UnaryOp();
 
 void Ident();
@@ -216,7 +216,7 @@ void ConstDef(vector<element> &elements){
     elem.type = "int";
     elem.reg = "%" + to_string(registers.size());
     items.push_back("    " + elem.reg + " = alloca i32\n");
-    cout<<"    " + elem.reg + " = alloca i32"<<endl;
+    //cout<<"    " + elem.reg + " = alloca i32"<<endl;
     registers.push("");
     if (*sym == "="){
         sym++;
@@ -235,7 +235,7 @@ void ConstInitVal(vector<element> &elements, element elem){
 void ConstExp(vector<element> &elements, element elem){
     AddExp(elements, true);
     items.push_back("    store i32 "+ rtn + ", i32* " + elem.reg + "\n");
-    cout<<"    store i32 "+ rtn + ", i32* " + elem.reg <<endl;
+    //cout<<"    store i32 "+ rtn + ", i32* " + elem.reg <<endl;
 }
 
 void VarDecl(vector<element> &elements){
@@ -265,7 +265,7 @@ void VarDef(vector<element> &elements){
     elem.type = "int";
     elem.reg = "%" + to_string(registers.size());
     items.push_back("    " + elem.reg + " = alloca i32\n");
-    cout<<"    " + elem.reg + " = alloca i32"<<endl;
+    //cout<<"    " + elem.reg + " = alloca i32"<<endl;
     registers.push("");
     if(*sym == "="){
         sym++;
@@ -277,22 +277,22 @@ void VarDef(vector<element> &elements){
 void InitVal(vector<element> &elements, element elem){
     Exp(elements, false);
     items.push_back("    store i32 "+ rtn + ", i32* " + elem.reg + "\n");
-    cout<<"    store i32 "+ rtn + ", i32* " + elem.reg<<endl;
+    //cout<<"    store i32 "+ rtn + ", i32* " + elem.reg<<endl;
 }
 
 void FuncDef(){
     FuncType();
     Ident();
     items.push_back("@main");
-    cout<<"@main";
+    //cout<<"@main";
     registers.push("main");
     if (*sym == "("){
         items.push_back("(");
-        cout<<"(";
+        //cout<<"(";
         sym++;
         if (*sym == ")"){
             items.push_back(")");
-            cout<<")";
+            //cout<<")";
             sym++;
         }
         else{
@@ -308,7 +308,7 @@ void FuncDef(){
 void FuncType(){
     if (*sym == "int"){
         items.push_back("define dso_local i32 ");
-        cout<<"define dso_local i32 ";
+        //cout<<"define dso_local i32 ";
         sym++;
     }
     else{
@@ -319,7 +319,7 @@ void FuncType(){
 void Block(){
     if (*sym == "{"){
         items.push_back("{\n");
-        cout<<"{"<<endl;
+        //cout<<"{"<<endl;
         sym++;
         vector<element> elements;
         while(*sym != "}"){
@@ -329,7 +329,7 @@ void Block(){
             }*/
         }
         items.push_back("}\n");
-        cout<<"}"<<endl;
+        //cout<<"}"<<endl;
         sym++;
     }
     else{
@@ -338,13 +338,10 @@ void Block(){
 }
 
 void BlockItem(vector<element> &elements){
-    cout<<"test1"<<endl;
     if(*sym == "const" || *sym == "int"){
         Decl(elements);
-        cout<<"test2"<<endl;
     }
     else{
-        cout<<"test3"<<endl;
         Stmt(elements);
     }
 }
@@ -361,7 +358,7 @@ void Stmt(vector<element> &elements){
             sym++;
             Exp(elements, false);
             items.push_back("    store i32 "+ rtn + ", i32* " + elem.reg + "\n");
-            cout<<"    store i32 "+ rtn + ", i32* " + elem.reg<<endl;
+            //cout<<"    store i32 "+ rtn + ", i32* " + elem.reg<<endl;
             if (*sym == ";"){
                 sym++;
             }
@@ -378,7 +375,7 @@ void Stmt(vector<element> &elements){
         Exp(elements, false);
         if (*sym == ";"){
             items.push_back("    ret i32 " + rtn + "\n");
-            cout<<"    ret i32 " + rtn<<endl;
+            //cout<<"    ret i32 " + rtn<<endl;
             sym++;
         }
         else{
@@ -421,11 +418,11 @@ void AddExp(vector<element> &elements, bool isConst){
         int new_reg = registers.size();
         if (op == "+"){
             items.push_back("    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
-            cout<<"    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2<<endl;
+            //cout<<"    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2<<endl;
         }
         if (op == "-"){
             items.push_back("    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 + "\n");
-            cout<<"    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2<<endl;
+            //cout<<"    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2<<endl;
         }
         registers.push(var1 + op + var2);
         rtn = "%" + to_string(new_reg);
@@ -444,15 +441,15 @@ void MulExp(vector<element> &elements, bool isConst){
         int new_reg = registers.size();
         if (op == "*"){
             items.push_back("    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 + "\n");
-            cout<<"    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2<<endl;
+            //cout<<"    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2<<endl;
         }
         if (op == "/"){
             items.push_back("    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
-            cout<<"    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2<<endl;
+            //cout<<"    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2<<endl;
         }
         if (op == "%"){
             items.push_back("    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 + "\n");
-            cout<<"    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2<<endl;
+            //cout<<"    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2<<endl;
         }
         registers.push(var1 + op + var2);
         rtn = "%" + to_string(new_reg);
@@ -472,13 +469,13 @@ void UnaryExp(vector<element> &elements, bool isConst){
                     if (func.type == "int"){
                         int new_reg = registers.size();
                         items.push_back("    %" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")\n");
-                        cout<<"    %" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")"<<endl;
+                        //cout<<"    %" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")"<<endl;
                         registers.push(func.name + "(" + params + ")");
                         rtn = "%" + to_string(new_reg);
                     }
                     else{
                         items.push_back("    call void @" + func.name + "(" + params + ")\n");
-                        cout<<"    call void @" + func.name + "(" + params + ")"<<endl;
+                        //cout<<"    call void @" + func.name + "(" + params + ")"<<endl;
                     }
                     sym++;
                 }
@@ -501,7 +498,7 @@ void UnaryExp(vector<element> &elements, bool isConst){
         if (minus){
             int new_reg = registers.size();
             items.push_back("    %" + to_string(new_reg) + " = sub i32 0, " + rtn + "\n");
-            cout<<"    %" + to_string(new_reg) + " = sub i32 0, " + rtn<<endl;
+            //cout<<"    %" + to_string(new_reg) + " = sub i32 0, " + rtn<<endl;
             registers.push("-" + rtn);
             rtn = "%" + to_string(new_reg);
         }
@@ -536,7 +533,7 @@ void PrimaryExp(vector<element> &elements, bool isConst){
         }
         int new_reg = registers.size();
         items.push_back("    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
-        cout<<"    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
+        //cout<<"    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
         registers.push(elem.reg);
         rtn =  "%" + to_string(new_reg);
         sym++;
@@ -547,7 +544,7 @@ void PrimaryExp(vector<element> &elements, bool isConst){
 }
 
 /* getarray & putarray unfinished */
-void FuncRParams(vector<element> &elements, function func, string params, bool isConst){
+void FuncRParams(vector<element> &elements, function func, string &params, bool isConst){
     int argc = 0;
     while(*sym != ")"){
         Exp(elements, isConst);
