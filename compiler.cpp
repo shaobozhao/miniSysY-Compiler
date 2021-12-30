@@ -9,7 +9,7 @@ using namespace std;
 
 //vector<string> syms;
 //vector<string>::iterator sym;
-//vector<string> items;
+//vector<string> output;
 
 bool single_line_note;
 bool multi_line_note;
@@ -72,8 +72,8 @@ int main(int argc, char *argv[]){
     sym = syms.begin();
     CompUnit();
     if (sym == syms.end() && !multi_line_note){
-        for (int i = 0; i < items.size(); i++){
-            ir << items[i];
+        for (int i = 0; i < output.size(); i++){
+            ir << output[i];
         }
     }
     else{
