@@ -18,6 +18,7 @@ struct element{
     string name;
     bool isConst;
     string type;
+    int level;
     string reg;
 };
 
@@ -38,20 +39,24 @@ void ConstExp(vector<element> &elements, element elem);
 void VarDecl(vector<element> &elements);
 void VarDef(vector<element> &elements);
 void InitVal(vector<element> &elements, element elem);
-void FuncDef();
+void FuncDef(vector<element> &elements);
 void FuncType();
-void Block();
+void Block(vector<element> &elements);
 void BlockItem(vector<element> &elements);
 void Stmt(vector<element> &elements);
-void LVal(vector<element> &elements);
 void Exp(vector<element> &elements, bool isConst);
-void AddExp(vector<element> &elements, bool isConst);
-void MulExp(vector<element> &elements, bool isConst);
-void UnaryExp(vector<element> &elements, bool isConst);
+void Cond(vector<element> &elements);
+void LVal(vector<element> &elements);
 void PrimaryExp(vector<element> &elements, bool isConst);
-void FuncRParams(vector<element> &elements, function func, string &params, bool isConst);
+void UnaryExp(vector<element> &elements, bool isConst);
 void UnaryOp();
-
+void FuncRParams(vector<element> &elements, function func, string &params, bool isConst);
+void MulExp(vector<element> &elements, bool isConst);
+void AddExp(vector<element> &elements, bool isConst);
+void RelExp();
+void EqExp();
+void LAndExp();
+void LOrExp();
 void Ident();
 
 bool is_element(vector<element> &elements, const string& str){
@@ -93,6 +98,7 @@ const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putar
 
 vector<function> functions;
 
+int level;
 stack<string> memory;
 string rtn;
 
@@ -103,7 +109,8 @@ bool isIdent(const string &str){
             return false;
         }
     }
-    return nondigit && (str != "int") && (str != "return");
+    bool reserved = str != "const" && str != "int" && str != "if" && str != "else" && str != "return";
+    return nondigit && reserved;
 }
 
 bool isFunc(const string &str){
@@ -159,7 +166,8 @@ bool isnum(const string &str){
 }
 
 void CompUnit(){
-    FuncDef();
+    vector<element> elements;
+    FuncDef(elements);
 }
 
 void Decl(vector<element> &elements){
@@ -214,6 +222,7 @@ void ConstDef(vector<element> &elements){
     elem.name = name;
     elem.isConst = true;
     elem.type = "int";
+    elem.level = level;
     elem.reg = "%" + to_string(memory.size());
     output.push_back("    " + elem.reg + " = alloca i32\n");
     //cout<<"    " + elem.reg + " = alloca i32"<<endl;
@@ -263,6 +272,7 @@ void VarDef(vector<element> &elements){
     elem.name = name;
     elem.isConst = false;
     elem.type = "int";
+    elem.level = level;
     elem.reg = "%" + to_string(memory.size());
     output.push_back("    " + elem.reg + " = alloca i32\n");
     //cout<<"    " + elem.reg + " = alloca i32"<<endl;
@@ -280,7 +290,7 @@ void InitVal(vector<element> &elements, element elem){
     //cout<<"    store i32 "+ rtn + ", i32* " + elem.reg<<endl;
 }
 
-void FuncDef(){
+void FuncDef(vector<element> &elements){
     FuncType();
     Ident();
     output.push_back("@main");
@@ -302,7 +312,7 @@ void FuncDef(){
     else{
         exit(1);
     }
-    Block();
+    Block(elements);
 }
 
 void FuncType(){
@@ -316,20 +326,23 @@ void FuncType(){
     }
 }
 
-void Block(){
+void Block(vector<element> &elements){
     if (*sym == "{"){
         output.push_back("{\n");
         //cout<<"{"<<endl;
+        level++;
+        vector<element> sub_elements;
+        sub_elements.assign(elements.begin(), elements.end());
         sym++;
-        vector<element> elements;
         while(*sym != "}"){
-            BlockItem(elements);
+            BlockItem(sub_elements);
             /*if(sym == syms.end()){
                 exit(1);
             }*/
         }
         output.push_back("}\n");
         //cout<<"}"<<endl;
+        level--;
         sym++;
     }
     else{
@@ -370,6 +383,28 @@ void Stmt(vector<element> &elements){
             exit(1);
         }
     }
+    else if (*sym == "if"){
+        sym++;
+        if (*sym == "("){
+            sym++;
+            Cond(elements);
+            if (*sym == ")"){
+                sym++;
+                Stmt(elements);
+                if (*sym == "else"){
+                    sym++;
+                    Stmt(elements);
+                }
+            }
+            else{
+                exit(1);
+            }
+        }
+        else{
+            exit(1);
+        }
+        
+    }
     else if (*sym == "return"){
         sym++;
         Exp(elements, false);
@@ -396,63 +431,52 @@ void Stmt(vector<element> &elements){
     }
 }
 
+void Exp(vector<element> &elements, bool isConst){
+    AddExp(elements, isConst);
+}
+
+void Cond(vector<element> &elements){
+    
+}
+
 void LVal(vector<element> &elements){
     if(!is_element(elements, *sym)){
         exit(1);
     }
 }
 
-void Exp(vector<element> &elements, bool isConst){
-    AddExp(elements, isConst);
-}
-
-void AddExp(vector<element> &elements, bool isConst){
-    MulExp(elements, isConst);
-    string var1, var2;
-    while (*sym == "+" || *sym == "-"){
-        var1 = rtn;
-        string op = *sym;
+void PrimaryExp(vector<element> &elements, bool isConst){
+    if (*sym == "("){
         sym++;
-        MulExp(elements, isConst);
-        var2 = rtn;
-        int new_reg = memory.size();
-        if (op == "+"){
-            output.push_back("    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2<<endl;
+        Exp(elements, isConst);
+        if (*sym == ")"){
+            sym++;
         }
-        if (op == "-"){
-            output.push_back("    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2<<endl;
+        else{
+            exit(1);
         }
-        memory.push(var1 + op + var2);
-        rtn = "%" + to_string(new_reg);
     }
-}
-
-void MulExp(vector<element> &elements, bool isConst){
-    UnaryExp(elements, isConst);
-    string var1, var2;
-    while (*sym == "*" || *sym == "/" || *sym == "%"){
-        var1 = rtn;
-        string op = *sym;
+    else if (isnum(*sym)){
+        rtn = *sym;
         sym++;
-        UnaryExp(elements, isConst);
-        var2 = rtn;
+    }
+    else if (isIdent(*sym)){
+        LVal(elements);
+        element elem = get_elem_by_name(elements, *sym);
+        if (isConst){
+            if (!elem.isConst){
+                exit(1);
+            }
+        }
         int new_reg = memory.size();
-        if (op == "*"){
-            output.push_back("    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2<<endl;
-        }
-        if (op == "/"){
-            output.push_back("    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2<<endl;
-        }
-        if (op == "%"){
-            output.push_back("    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2<<endl;
-        }
-        memory.push(var1 + op + var2);
-        rtn = "%" + to_string(new_reg);
+        output.push_back("    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
+        //cout<<"    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
+        memory.push(elem.reg);
+        rtn =  "%" + to_string(new_reg);
+        sym++;
+    }
+    else{
+        exit(1);
     }
 }
 
@@ -508,34 +532,8 @@ void UnaryExp(vector<element> &elements, bool isConst){
     }
 }
 
-void PrimaryExp(vector<element> &elements, bool isConst){
-    if (*sym == "("){
-        sym++;
-        Exp(elements, isConst);
-        if (*sym == ")"){
-            sym++;
-        }
-        else{
-            exit(1);
-        }
-    }
-    else if (isnum(*sym)){
-        rtn = *sym;
-        sym++;
-    }
-    else if (isIdent(*sym)){
-        LVal(elements);
-        element elem = get_elem_by_name(elements, *sym);
-        if (isConst){
-            if (!elem.isConst){
-                exit(1);
-            }
-        }
-        int new_reg = memory.size();
-        output.push_back("    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
-        //cout<<"    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
-        memory.push(elem.reg);
-        rtn =  "%" + to_string(new_reg);
+void UnaryOp(){
+    if (*sym == "+" || *sym == "-" || *sym == "!"){
         sym++;
     }
     else{
@@ -560,13 +558,70 @@ void FuncRParams(vector<element> &elements, function func, string &params, bool 
     }
 }
 
-void UnaryOp(){
-    if (*sym == "+" || *sym == "-"){
+void MulExp(vector<element> &elements, bool isConst){
+    UnaryExp(elements, isConst);
+    string var1, var2;
+    while (*sym == "*" || *sym == "/" || *sym == "%"){
+        var1 = rtn;
+        string op = *sym;
         sym++;
+        UnaryExp(elements, isConst);
+        var2 = rtn;
+        int new_reg = memory.size();
+        if (op == "*"){
+            output.push_back("    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2<<endl;
+        }
+        if (op == "/"){
+            output.push_back("    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2<<endl;
+        }
+        if (op == "%"){
+            output.push_back("    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2<<endl;
+        }
+        memory.push(var1 + op + var2);
+        rtn = "%" + to_string(new_reg);
     }
-    else{
-        exit(1);
+}
+
+void AddExp(vector<element> &elements, bool isConst){
+    MulExp(elements, isConst);
+    string var1, var2;
+    while (*sym == "+" || *sym == "-"){
+        var1 = rtn;
+        string op = *sym;
+        sym++;
+        MulExp(elements, isConst);
+        var2 = rtn;
+        int new_reg = memory.size();
+        if (op == "+"){
+            output.push_back("    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2<<endl;
+        }
+        if (op == "-"){
+            output.push_back("    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2<<endl;
+        }
+        memory.push(var1 + op + var2);
+        rtn = "%" + to_string(new_reg);
     }
+}
+
+void RelExp(){
+
+}
+
+void EqExp(){
+
+}
+
+void LAndExp(){
+
+}
+
+void LOrExp(){
+
 }
 
 void Ident(){
