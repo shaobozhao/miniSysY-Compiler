@@ -755,14 +755,14 @@ void LOrExp(vector<element> &elements, int &block_true, int &block_false){
         LAndExp(elements, block_next);
         output.push_back("    br i1 " + rtn.first +", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
     }
-    output.push_back("\nx" + to_string(block_next) + ":\n");
-    output.push_back("    br label %x" + to_string(block_exec) + "\n");
     output.push_back("\nx" + to_string(block_exec) + ":\n");
     block_true = memory.size();
     memory.push("block_true");
+    output.push_back("    br label %x" + to_string(block_true) + "\n");
+    output.push_back("\nx" + to_string(block_next) + ":\n");
     block_false = memory.size();
     memory.push("block_false");
-    output.push_back("    br i1 " + rtn.first +", label %x" + to_string(block_true) + ", label %x" + to_string(block_false) + "\n");
+    output.push_back("    br label %x" + to_string(block_false) + "\n");
 }
 
 void Ident(){
