@@ -670,12 +670,12 @@ void RelExp(vector<element> &elements){
             //cout<<"    %x" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2<<endl;
         }
         memory.push(var1 + op + var2);
-        rtn = "%x" + to_string(new_reg);
+        /*rtn = "%x" + to_string(new_reg);
         new_reg = memory.size();
         output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
         //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
         memory.push(rtn + "to i32");
-        rtn = "%x" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);*/
     }
     
 }
@@ -701,13 +701,12 @@ void EqExp(vector<element> &elements){
         }
         memory.push(var1 + op + var2);
         rtn = "%x" + to_string(new_reg);
-        new_reg = memory.size();
+        /*new_reg = memory.size();
         output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
         //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
         memory.push(rtn + "to i32");
-        rtn = "%x" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);*/
     }
-    
 }
 
 void LAndExp(vector<element> &elements, int upper_block_next_exec){
