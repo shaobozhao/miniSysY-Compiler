@@ -45,7 +45,7 @@ void Block(vector<element> &elements);
 void BlockItem(vector<element> &elements);
 void Stmt(vector<element> &elements);
 void Exp(vector<element> &elements, bool isConst);
-void Cond(vector<element> &elements);
+void Cond(vector<element> &elements, int block_exec, int block_false_exec);
 void LVal(vector<element> &elements);
 void PrimaryExp(vector<element> &elements, bool isConst);
 void UnaryExp(vector<element> &elements, bool isConst);
@@ -53,10 +53,10 @@ void UnaryOp();
 void FuncRParams(vector<element> &elements, function func, string &params, bool isConst);
 void MulExp(vector<element> &elements, bool isConst);
 void AddExp(vector<element> &elements, bool isConst);
-void RelExp();
-void EqExp();
-void LAndExp();
-void LOrExp();
+void RelExp(vector<element> &elements);
+void EqExp(vector<element> &elements);
+void LAndExp(vector<element> &elements, int upper_block_next_exec);
+void LOrExp(vector<element> &elements, int block_exec, int block_false_exec);
 void Ident();
 
 bool is_element(vector<element> &elements, const string& str){
@@ -312,7 +312,13 @@ void FuncDef(vector<element> &elements){
     else{
         exit(1);
     }
-    Block(elements);
+    if (*sym == "{"){
+        output.push_back("{\n");
+        //cout<<"{"<<endl;
+        Block(elements);
+        output.push_back("}\n");
+        //cout<<"}"<<endl;
+    }
 }
 
 void FuncType(){
@@ -328,8 +334,6 @@ void FuncType(){
 
 void Block(vector<element> &elements){
     if (*sym == "{"){
-        output.push_back("{\n");
-        //cout<<"{"<<endl;
         level++;
         vector<element> sub_elements;
         sub_elements.assign(elements.begin(), elements.end());
@@ -340,8 +344,6 @@ void Block(vector<element> &elements){
                 exit(1);
             }*/
         }
-        output.push_back("}\n");
-        //cout<<"}"<<endl;
         level--;
         sym++;
     }
@@ -383,18 +385,37 @@ void Stmt(vector<element> &elements){
             exit(1);
         }
     }
+    else if (*sym == "{"){
+        Block(elements);
+    }
     else if (*sym == "if"){
         sym++;
         if (*sym == "("){
             sym++;
-            Cond(elements);
+            int block_exec = memory.size();
+            memory.push("block_exec");
+            int block_false_exec = memory.size();
+            memory.push("block_false_exec");
+            int block_out = memory.size();
+            memory.push("block_out");
+            Cond(elements, block_exec, block_false_exec);
             if (*sym == ")"){
                 sym++;
+                output.push_back("\n" + to_string(block_exec) + ":\n");
+                //cout<<"\n" + to_string(block_exec) + ":"<<endl;
                 Stmt(elements);
+                output.push_back("    br label %" + to_string(block_false_exec) + ":\n");
+                //cout<<"    br label %" + to_string(block_false_exec) + ":"<<endl;
+                output.push_back("\n" + to_string(block_false_exec) + ":\n");
+                //cout<<"\n" + to_string(block_false_exec) + ":"<<endl;
                 if (*sym == "else"){
                     sym++;
                     Stmt(elements);
                 }
+                output.push_back("    br label %" + to_string(block_out) + ":\n");
+                //cout<<"    br label %" + to_string(block_out) + ":"<<endl;
+                output.push_back("\n" + to_string(block_out) + ":\n");
+                //cout<<"\n" + to_string(block_out) + ":"<<endl;
             }
             else{
                 exit(1);
@@ -435,8 +456,8 @@ void Exp(vector<element> &elements, bool isConst){
     AddExp(elements, isConst);
 }
 
-void Cond(vector<element> &elements){
-    
+void Cond(vector<element> &elements, int block_exec, int block_false_exec){
+    LOrExp(elements, block_exec, block_false_exec);
 }
 
 void LVal(vector<element> &elements){
@@ -515,8 +536,9 @@ void UnaryExp(vector<element> &elements, bool isConst){
             PrimaryExp(elements, isConst);
         }
     }
-    else if (*sym == "+" || *sym == "-"){
+    else if (*sym == "+" || *sym == "-" || *sym == "!"){
         bool minus = *sym == "-";
+        bool inverse = *sym == "!";
         UnaryOp();
         UnaryExp(elements, isConst);
         if (minus){
@@ -524,6 +546,18 @@ void UnaryExp(vector<element> &elements, bool isConst){
             output.push_back("    %" + to_string(new_reg) + " = sub i32 0, " + rtn + "\n");
             //cout<<"    %" + to_string(new_reg) + " = sub i32 0, " + rtn<<endl;
             memory.push("-" + rtn);
+            rtn = "%" + to_string(new_reg);
+        }
+        if (inverse){
+            int new_reg = memory.size();
+            output.push_back("    %" + to_string(new_reg) + " = icmp eq i32 " + rtn + ", 0\n");
+            //cout<<"    %" + to_string(new_reg) + " = icmp eq i32 " + rtn + ", 0"<<endl;
+            memory.push("!" + rtn);
+            rtn = "%" + to_string(new_reg);
+            new_reg = memory.size();
+            output.push_back("    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
+            //cout<<"    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+            memory.push(rtn + "to i32");
             rtn = "%" + to_string(new_reg);
         }
     }
@@ -608,20 +642,114 @@ void AddExp(vector<element> &elements, bool isConst){
     }
 }
 
-void RelExp(){
-
+void RelExp(vector<element> &elements){
+    AddExp(elements, false);
+    string var1, var2, var_temp = rtn;
+    while (*sym == "<" || *sym == ">" || *sym == "<=" || *sym == ">="){
+        var1 = var_temp;
+        string op = *sym;
+        sym++;
+        AddExp(elements, false);
+        var2 = rtn;
+        var_temp = var2;
+        int new_reg = memory.size();
+        if (op == "<"){
+            output.push_back("    %" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2<<endl;
+        }
+        if (op == ">"){
+            output.push_back("    %" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2<<endl;
+        }
+        if (op == "<="){
+            output.push_back("    %" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2<<endl;
+        }
+        if (op == ">="){
+            output.push_back("    %" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2<<endl;
+        }
+        memory.push(var1 + op + var2);
+        rtn = "%" + to_string(new_reg);
+        new_reg = memory.size();
+        output.push_back("    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
+        //cout<<"    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+        memory.push(rtn + "to i32");
+        rtn = "%" + to_string(new_reg);
+    }
+    
 }
 
-void EqExp(){
-
+void EqExp(vector<element> &elements){
+    RelExp(elements);
+    string var1, var2, var_temp = rtn;
+    while (*sym == "==" || *sym == "!="){
+        var1 = var_temp;
+        string op = *sym;
+        sym++;
+        RelExp(elements);
+        var2 = rtn;
+        var_temp = var2;
+        int new_reg = memory.size();
+        if (op == "=="){
+            output.push_back("    %" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2<<endl;
+        }
+        if (op == "!="){
+            output.push_back("    %" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2<<endl;
+        }
+        memory.push(var1 + op + var2);
+        rtn = "%" + to_string(new_reg);
+        new_reg = memory.size();
+        output.push_back("    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
+        //cout<<"    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+        memory.push(rtn + "to i32");
+        rtn = "%" + to_string(new_reg);
+    }
+    
 }
 
-void LAndExp(){
-
+void LAndExp(vector<element> &elements, int upper_block_next_exec){
+    int block_next = memory.size();
+    memory.push("block_next");
+    EqExp(elements);
+    output.push_back("    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec) + "\n");
+    //cout<<"    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec)<<endl;
+    while (*sym == "&&"){
+        sym++;
+        block_next = memory.size();
+        memory.push("block_next");
+        output.push_back("\n" + to_string(block_next) + ":\n");
+        //cout<<"\n" + to_string(block_next) + ":"<<endl;
+        EqExp(elements);
+        output.push_back("    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec) + "\n");
+        //cout<<"    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec)<<endl;
+    }
+    output.push_back("\n" + to_string(block_next) + ":\n");
+    //cout<<"\n" + to_string(block_next) + ":"<<endl;
 }
 
-void LOrExp(){
-
+void LOrExp(vector<element> &elements, int block_exec, int block_false_exec){
+    int block_next = memory.size();
+    memory.push("block_next");
+    LAndExp(elements, block_next);
+    output.push_back("    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next) + "\n");
+    //cout<<"    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next)<<endl;
+    while (*sym == "||"){
+        sym++;
+        block_next = memory.size();
+        memory.push("block_next");
+        output.push_back("\n" + to_string(block_next) + ":\n");
+        //cout<<"\n" + to_string(block_next) + ":"<<endl;
+        LAndExp(elements, block_next);
+        output.push_back("    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next) + "\n");
+        //cout<<"    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next)<<endl;
+    }
+    output.push_back("\n" + to_string(block_next) + ":\n");
+    //cout<<"\n" + to_string(block_next) + ":"<<endl;
+    output.push_back("    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_false_exec) + "\n");
+    //cout<<"    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_false_exec)<<endl;
 }
 
 void Ident(){
