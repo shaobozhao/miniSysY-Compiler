@@ -80,32 +80,27 @@ void process(string token){
             syms.push_back(string(1, token.at(pos)));
             pos++;
         }
-        /*
-        else if (word[pos] == '<'){
-            printf("Lt\n");
-            pos++;
-        }
-        else if (word[pos] == '>'){
-            printf("Gt\n");
-            pos++;
-        }
-        */
-        else if (token.at(pos) == '='){
-            /*if (pos < word.length() - 1 && word[pos + 1] == '='){
-                printf("Eq\n");
+        else if (token.at(pos) == '<' || token.at(pos) == '>' || token.at(pos) == '=' || token.at(pos) == '!'){
+            if (pos < token.length() - 1 && token.at(pos + 1) == '='){
+                syms.push_back(string(1, token.at(pos)) + "=");
                 pos += 2;
             }
-            else{*/
-                syms.push_back("=");
+            else{
+                syms.push_back(string(1, token.at(pos)));
                 pos++;
-            //}
+            }
         }
-        else if (token.at(pos) == ','){
-            syms.push_back(",");
-            pos++;
+        else if (token.at(pos) == '&' || token.at(pos) == '|'){
+            if (pos < token.length() - 1 && token.at(pos + 1) == token.at(pos)){
+                syms.push_back(string(2, token.at(pos)));
+                pos += 2;
+            }
+            else{
+                exit(1);
+            }
         }
-        else if (token.at(pos) == ';'){
-            syms.push_back(";");
+        else if (token.at(pos) == ',' || token.at(pos) == ';'){
+            syms.push_back(string(1, token.at(pos)));
             pos++;
         }
         else{
