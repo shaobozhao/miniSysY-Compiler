@@ -404,16 +404,16 @@ void Stmt(vector<element> &elements){
                 output.push_back("\n" + to_string(block_exec) + ":\n");
                 //cout<<"\n" + to_string(block_exec) + ":"<<endl;
                 Stmt(elements);
-                output.push_back("    br label %x" + to_string(block_false_exec) + ":\n");
-                //cout<<"    br label %x" + to_string(block_false_exec) + ":"<<endl;
+                output.push_back("    br label %x" + to_string(block_false_exec) + "\n");
+                //cout<<"    br label %x" + to_string(block_false_exec)<<endl;
                 output.push_back("\n" + to_string(block_false_exec) + ":\n");
                 //cout<<"\n" + to_string(block_false_exec) + ":"<<endl;
                 if (*sym == "else"){
                     sym++;
                     Stmt(elements);
                 }
-                output.push_back("    br label %x" + to_string(block_out) + ":\n");
-                //cout<<"    br label %x" + to_string(block_out) + ":"<<endl;
+                output.push_back("    br label %x" + to_string(block_out) + "\n");
+                //cout<<"    br label %x" + to_string(block_out)<<endl;
                 output.push_back("\n" + to_string(block_out) + ":\n");
                 //cout<<"\n" + to_string(block_out) + ":"<<endl;
             }
@@ -713,8 +713,8 @@ void LAndExp(vector<element> &elements, int upper_block_next_exec){
     int block_next = memory.size();
     memory.push("block_next");
     EqExp(elements);
-    output.push_back("    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec) + "\n");
-    //cout<<"    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec)<<endl;
+    output.push_back("    br i1 " + rtn +", label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec) + "\n");
+    //cout<<"    br i1 " + rtn +", label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec)<<endl;
     while (*sym == "&&"){
         sym++;
         block_next = memory.size();
@@ -722,8 +722,8 @@ void LAndExp(vector<element> &elements, int upper_block_next_exec){
         output.push_back("\n" + to_string(block_next) + ":\n");
         //cout<<"\n" + to_string(block_next) + ":"<<endl;
         EqExp(elements);
-        output.push_back("    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec) + "\n");
-        //cout<<"    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec)<<endl;
+        output.push_back("    br i1 " + rtn +", label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec) + "\n");
+        //cout<<"    br i1 " + rtn +", label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec)<<endl;
     }
     output.push_back("\n" + to_string(block_next) + ":\n");
     //cout<<"\n" + to_string(block_next) + ":"<<endl;
@@ -733,8 +733,8 @@ void LOrExp(vector<element> &elements, int block_exec, int block_false_exec){
     int block_next = memory.size();
     memory.push("block_next");
     LAndExp(elements, block_next);
-    output.push_back("    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
-    //cout<<"    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next)<<endl;
+    output.push_back("    br i1 " + rtn +", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
+    //cout<<"    br i1 " + rtn +", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next)<<endl;
     while (*sym == "||"){
         sym++;
         block_next = memory.size();
@@ -742,13 +742,13 @@ void LOrExp(vector<element> &elements, int block_exec, int block_false_exec){
         output.push_back("\n" + to_string(block_next) + ":\n");
         //cout<<"\n" + to_string(block_next) + ":"<<endl;
         LAndExp(elements, block_next);
-        output.push_back("    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
-        //cout<<"    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next)<<endl;
+        output.push_back("    br i1 " + rtn +", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
+        //cout<<"    br i1 " + rtn +", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next)<<endl;
     }
     output.push_back("\n" + to_string(block_next) + ":\n");
     //cout<<"\n" + to_string(block_next) + ":"<<endl;
-    output.push_back("    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_false_exec) + "\n");
-    //cout<<"    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_false_exec)<<endl;
+    output.push_back("    br i1 " + rtn +", label %x" + to_string(block_exec) + ", label %x" + to_string(block_false_exec) + "\n");
+    //cout<<"    br i1 " + rtn +", label %x" + to_string(block_exec) + ", label %x" + to_string(block_false_exec)<<endl;
 }
 
 void Ident(){
