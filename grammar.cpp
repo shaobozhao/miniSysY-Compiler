@@ -59,9 +59,11 @@ void LAndExp(vector<element> &elements, int &or_block_next);
 void LOrExp(vector<element> &elements, int &block_exec, int &block_false);
 void Ident();
 
+int level;
+
 bool is_element(vector<element> &elements, const string& str){
     auto elem_iter = find_if(elements.begin(), elements.end(), [str](element elem){
-        if (elem.name == str){
+        if (elem.name == str && elem.level == level){
             return true;
         }
         else{
@@ -78,7 +80,8 @@ bool is_element(vector<element> &elements, const string& str){
 
 element get_elem_by_name(vector<element> &elements, string name){
     element elem;
-    for (int i = 0; i < elements.size(); i++){
+    elem.level = -1;
+    for (int i = elements.size() - 1; i > -1; i--){
         if (elements[i].name == name){
             elem = elements[i];
             break;
@@ -98,7 +101,6 @@ const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putar
 
 vector<function> functions;
 
-int level;
 stack<string> memory;
 pair<string, string> rtn;
 
@@ -458,7 +460,7 @@ void Cond(vector<element> &elements, int &block_exec, int &block_false){
 }
 
 void LVal(vector<element> &elements){
-    if(!is_element(elements, *sym)){
+    if(!is_element(elements, *sym) && get_elem_by_name(elements, *sym).level < 0){
         exit(1);
     }
 }
@@ -680,7 +682,7 @@ void RelExp(vector<element> &elements){
 
         new_reg = memory.size();
         output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32\n");
-        //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+        //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32"<<endl;
         memory.push(rtn.first + "to i32");
         rtn.first = "%x" + to_string(new_reg);
         rtn.second = "i32";
@@ -712,7 +714,7 @@ void EqExp(vector<element> &elements){
 
         new_reg = memory.size();
         output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32\n");
-        //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+        //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32"<<endl;
         memory.push(rtn.first + "to i32");
         rtn.first = "%x" + to_string(new_reg);
         rtn.second = "i32";
