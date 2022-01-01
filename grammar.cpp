@@ -223,7 +223,7 @@ void ConstDef(vector<element> &elements){
     elem.isConst = true;
     elem.type = "int";
     elem.level = level;
-    elem.reg = "%" + to_string(memory.size());
+    elem.reg = "%x" + to_string(memory.size());
     output.push_back("    " + elem.reg + " = alloca i32\n");
     //cout<<"    " + elem.reg + " = alloca i32"<<endl;
     memory.push("");
@@ -273,7 +273,7 @@ void VarDef(vector<element> &elements){
     elem.isConst = false;
     elem.type = "int";
     elem.level = level;
-    elem.reg = "%" + to_string(memory.size());
+    elem.reg = "%x" + to_string(memory.size());
     output.push_back("    " + elem.reg + " = alloca i32\n");
     //cout<<"    " + elem.reg + " = alloca i32"<<endl;
     memory.push("");
@@ -404,16 +404,16 @@ void Stmt(vector<element> &elements){
                 output.push_back("\n" + to_string(block_exec) + ":\n");
                 //cout<<"\n" + to_string(block_exec) + ":"<<endl;
                 Stmt(elements);
-                output.push_back("    br label %" + to_string(block_false_exec) + ":\n");
-                //cout<<"    br label %" + to_string(block_false_exec) + ":"<<endl;
+                output.push_back("    br label %x" + to_string(block_false_exec) + ":\n");
+                //cout<<"    br label %x" + to_string(block_false_exec) + ":"<<endl;
                 output.push_back("\n" + to_string(block_false_exec) + ":\n");
                 //cout<<"\n" + to_string(block_false_exec) + ":"<<endl;
                 if (*sym == "else"){
                     sym++;
                     Stmt(elements);
                 }
-                output.push_back("    br label %" + to_string(block_out) + ":\n");
-                //cout<<"    br label %" + to_string(block_out) + ":"<<endl;
+                output.push_back("    br label %x" + to_string(block_out) + ":\n");
+                //cout<<"    br label %x" + to_string(block_out) + ":"<<endl;
                 output.push_back("\n" + to_string(block_out) + ":\n");
                 //cout<<"\n" + to_string(block_out) + ":"<<endl;
             }
@@ -490,10 +490,10 @@ void PrimaryExp(vector<element> &elements, bool isConst){
             }
         }
         int new_reg = memory.size();
-        output.push_back("    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
-        //cout<<"    %" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
+        output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
+        //cout<<"    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
         memory.push(elem.reg);
-        rtn =  "%" + to_string(new_reg);
+        rtn =  "%x" + to_string(new_reg);
         sym++;
     }
     else{
@@ -513,10 +513,10 @@ void UnaryExp(vector<element> &elements, bool isConst){
                 if (*sym == ")"){
                     if (func.type == "int"){
                         int new_reg = memory.size();
-                        output.push_back("    %" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")\n");
-                        //cout<<"    %" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")"<<endl;
+                        output.push_back("    %x" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")\n");
+                        //cout<<"    %x" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")"<<endl;
                         memory.push(func.name + "(" + params + ")");
-                        rtn = "%" + to_string(new_reg);
+                        rtn = "%x" + to_string(new_reg);
                     }
                     else{
                         output.push_back("    call void @" + func.name + "(" + params + ")\n");
@@ -543,22 +543,22 @@ void UnaryExp(vector<element> &elements, bool isConst){
         UnaryExp(elements, isConst);
         if (minus){
             int new_reg = memory.size();
-            output.push_back("    %" + to_string(new_reg) + " = sub i32 0, " + rtn + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = sub i32 0, " + rtn<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = sub i32 0, " + rtn + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = sub i32 0, " + rtn<<endl;
             memory.push("-" + rtn);
-            rtn = "%" + to_string(new_reg);
+            rtn = "%x" + to_string(new_reg);
         }
         if (inverse){
             int new_reg = memory.size();
-            output.push_back("    %" + to_string(new_reg) + " = icmp eq i32 " + rtn + ", 0\n");
-            //cout<<"    %" + to_string(new_reg) + " = icmp eq i32 " + rtn + ", 0"<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = icmp eq i32 " + rtn + ", 0\n");
+            //cout<<"    %x" + to_string(new_reg) + " = icmp eq i32 " + rtn + ", 0"<<endl;
             memory.push("!" + rtn);
-            rtn = "%" + to_string(new_reg);
+            rtn = "%x" + to_string(new_reg);
             new_reg = memory.size();
-            output.push_back("    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
-            //cout<<"    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
+            //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
             memory.push(rtn + "to i32");
-            rtn = "%" + to_string(new_reg);
+            rtn = "%x" + to_string(new_reg);
         }
     }
     else{
@@ -595,7 +595,7 @@ void FuncRParams(vector<element> &elements, function func, string &params, bool 
 void MulExp(vector<element> &elements, bool isConst){
     UnaryExp(elements, isConst);
     string var1, var2;
-    while (*sym == "*" || *sym == "/" || *sym == "%"){
+    while (*sym == "*" || *sym == "/" || *sym == "%x"){
         var1 = rtn;
         string op = *sym;
         sym++;
@@ -603,19 +603,19 @@ void MulExp(vector<element> &elements, bool isConst){
         var2 = rtn;
         int new_reg = memory.size();
         if (op == "*"){
-            output.push_back("    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2<<endl;
         }
         if (op == "/"){
-            output.push_back("    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2<<endl;
         }
-        if (op == "%"){
-            output.push_back("    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2<<endl;
+        if (op == "%x"){
+            output.push_back("    %x" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2<<endl;
         }
         memory.push(var1 + op + var2);
-        rtn = "%" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);
     }
 }
 
@@ -630,15 +630,15 @@ void AddExp(vector<element> &elements, bool isConst){
         var2 = rtn;
         int new_reg = memory.size();
         if (op == "+"){
-            output.push_back("    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2<<endl;
         }
         if (op == "-"){
-            output.push_back("    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2<<endl;
         }
         memory.push(var1 + op + var2);
-        rtn = "%" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);
     }
 }
 
@@ -654,28 +654,28 @@ void RelExp(vector<element> &elements){
         var_temp = var2;
         int new_reg = memory.size();
         if (op == "<"){
-            output.push_back("    %" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2<<endl;
         }
         if (op == ">"){
-            output.push_back("    %" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2<<endl;
         }
         if (op == "<="){
-            output.push_back("    %" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2<<endl;
         }
         if (op == ">="){
-            output.push_back("    %" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2<<endl;
         }
         memory.push(var1 + op + var2);
-        rtn = "%" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);
         new_reg = memory.size();
-        output.push_back("    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
-        //cout<<"    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+        output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
+        //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
         memory.push(rtn + "to i32");
-        rtn = "%" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);
     }
     
 }
@@ -692,20 +692,20 @@ void EqExp(vector<element> &elements){
         var_temp = var2;
         int new_reg = memory.size();
         if (op == "=="){
-            output.push_back("    %" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2<<endl;
         }
         if (op == "!="){
-            output.push_back("    %" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2 + "\n");
-            //cout<<"    %" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2<<endl;
+            output.push_back("    %x" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2 + "\n");
+            //cout<<"    %x" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2<<endl;
         }
         memory.push(var1 + op + var2);
-        rtn = "%" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);
         new_reg = memory.size();
-        output.push_back("    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
-        //cout<<"    %" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
+        output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32\n");
+        //cout<<"    %x" + to_string(new_reg) + " = zext i1 " + rtn + " to i32"<<endl;
         memory.push(rtn + "to i32");
-        rtn = "%" + to_string(new_reg);
+        rtn = "%x" + to_string(new_reg);
     }
     
 }
@@ -714,8 +714,8 @@ void LAndExp(vector<element> &elements, int upper_block_next_exec){
     int block_next = memory.size();
     memory.push("block_next");
     EqExp(elements);
-    output.push_back("    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec) + "\n");
-    //cout<<"    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec)<<endl;
+    output.push_back("    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec) + "\n");
+    //cout<<"    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec)<<endl;
     while (*sym == "&&"){
         sym++;
         block_next = memory.size();
@@ -723,8 +723,8 @@ void LAndExp(vector<element> &elements, int upper_block_next_exec){
         output.push_back("\n" + to_string(block_next) + ":\n");
         //cout<<"\n" + to_string(block_next) + ":"<<endl;
         EqExp(elements);
-        output.push_back("    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec) + "\n");
-        //cout<<"    br i1 " + rtn +" label %" + to_string(block_next) + ", label %" + to_string(upper_block_next_exec)<<endl;
+        output.push_back("    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec) + "\n");
+        //cout<<"    br i1 " + rtn +" label %x" + to_string(block_next) + ", label %x" + to_string(upper_block_next_exec)<<endl;
     }
     output.push_back("\n" + to_string(block_next) + ":\n");
     //cout<<"\n" + to_string(block_next) + ":"<<endl;
@@ -734,8 +734,8 @@ void LOrExp(vector<element> &elements, int block_exec, int block_false_exec){
     int block_next = memory.size();
     memory.push("block_next");
     LAndExp(elements, block_next);
-    output.push_back("    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next) + "\n");
-    //cout<<"    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next)<<endl;
+    output.push_back("    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
+    //cout<<"    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next)<<endl;
     while (*sym == "||"){
         sym++;
         block_next = memory.size();
@@ -743,13 +743,13 @@ void LOrExp(vector<element> &elements, int block_exec, int block_false_exec){
         output.push_back("\n" + to_string(block_next) + ":\n");
         //cout<<"\n" + to_string(block_next) + ":"<<endl;
         LAndExp(elements, block_next);
-        output.push_back("    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next) + "\n");
-        //cout<<"    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_next)<<endl;
+        output.push_back("    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
+        //cout<<"    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_next)<<endl;
     }
     output.push_back("\n" + to_string(block_next) + ":\n");
     //cout<<"\n" + to_string(block_next) + ":"<<endl;
-    output.push_back("    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_false_exec) + "\n");
-    //cout<<"    br i1 " + rtn +" label %" + to_string(block_exec) + ", label %" + to_string(block_false_exec)<<endl;
+    output.push_back("    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_false_exec) + "\n");
+    //cout<<"    br i1 " + rtn +" label %x" + to_string(block_exec) + ", label %x" + to_string(block_false_exec)<<endl;
 }
 
 void Ident(){
