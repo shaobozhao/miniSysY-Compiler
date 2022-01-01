@@ -399,7 +399,9 @@ void Stmt(vector<element> &elements){
                 output.push_back("\nx" + to_string(block_true) + ":\n");
                 //cout<<"\nx" + to_string(block_true) + ":"<<endl;
                 Stmt(elements);
-                output.push_back("    br label %x" + to_string(block_false) + "\n");
+                block_out = memory.size();
+                memory.push("block_out");
+                output.push_back("    br label %x" + to_string(block_out) + "\n");
                 //cout<<"    br label %x" + to_string(block_false)<<endl;
                 output.push_back("\nx" + to_string(block_false) + ":\n");
                 //cout<<"\nx" + to_string(block_false) + ":"<<endl;
@@ -407,8 +409,6 @@ void Stmt(vector<element> &elements){
                     sym++;
                     Stmt(elements);
                 }
-                block_out = memory.size();
-                memory.push("block_out");
                 output.push_back("    br label %x" + to_string(block_out) + "\n");
                 //cout<<"    br label %x" + to_string(block_out)<<endl;
                 output.push_back("\nx" + to_string(block_out) + ":\n");
