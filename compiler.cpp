@@ -7,10 +7,6 @@
 
 using namespace std;
 
-//vector<string> syms;
-//vector<string>::iterator sym;
-//vector<string> output;
-
 bool single_line_note;
 bool multi_line_note;
 
@@ -52,7 +48,7 @@ int main(int argc, char *argv[]){
     ir.open(argv[2]);
     string line;
     while (getline(input, line)){
-        cout << line << endl;
+        //cout << line << endl;
         istringstream line_split(line);
         string token;
         while (line_split >> token){

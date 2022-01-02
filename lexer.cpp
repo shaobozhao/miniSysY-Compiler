@@ -1,10 +1,9 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
+#include "public.h"
 
 using namespace std;
-
-vector<string> syms;
 
 int process_word(string token, int pos){
     string word;
