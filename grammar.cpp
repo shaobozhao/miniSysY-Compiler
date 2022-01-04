@@ -104,7 +104,7 @@ bool isIdent(const string &str){
             return false;
         }
     }
-    bool reserved = str != "const" && str != "int" && str != "if" && str != "else" && str != "return";
+    bool reserved = str != "const" && str != "int" && str != "if" && str != "else" && str != "while" && str != "return";
     return nondigit && reserved;
 }
 
@@ -437,8 +437,37 @@ void Stmt(vector<element> &elements){
         }
         else{
             exit(1);
+        }       
+    }
+    else if (*sym == "while"){
+        sym++;
+        if (*sym == "("){
+            sym++;
+            int block_cond, block_true, block_false;
+            block_cond = memory.size();
+            memory.push("block_cond");
+            output.push_back("    br label %x" + to_string(block_cond) + "\n");
+            //cout<<"    br label %x" + to_string(block_cond)<<endl;
+            output.push_back("\nx" + to_string(block_cond) + ":\n");
+            //cout<<"\nx" + to_string(block_cond) + ":"<<endl;
+            Cond(elements, block_true, block_false);
+            if (*sym == ")"){
+                sym++;
+                output.push_back("\nx" + to_string(block_true) + ":\n");
+                //cout<<"\nx" + to_string(block_true) + ":"<<endl;
+                Stmt(elements);
+                output.push_back("    br label %x" + to_string(block_cond) + "\n");
+                //cout<<"    br label %x" + to_string(block_cond)<<endl;
+                output.push_back("\nx" + to_string(block_false) + ":\n");
+                //cout<<"\nx" + to_string(block_false) + ":"<<endl;
+            }
+            else{
+                exit(1);
+            }
         }
-        
+        else{
+            exit(1);
+        }
     }
     else if (*sym == "return"){
         sym++;
@@ -509,14 +538,19 @@ void PrimaryExp(vector<element> &elements, bool isConst){
             }
         }
         else{
-            int new_reg = memory.size();
-            output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
-            //cout<<"    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
-            memory.push(elem.reg);
-            rtn.first =  "%x" + to_string(new_reg);
-            rtn.second = "i32";
+            if (elem.isConst){
+                rtn.first = elem.reg;
+                rtn.second = "i32";
+            }
+            else{
+                int new_reg = memory.size();
+                output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
+                //cout<<"    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg<<endl;
+                memory.push(elem.reg);
+                rtn.first =  "%x" + to_string(new_reg);
+                rtn.second = "i32";
+            }
         }
-        
         sym++;
     }
     else{
