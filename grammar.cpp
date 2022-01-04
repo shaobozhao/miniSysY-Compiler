@@ -94,6 +94,9 @@ const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putar
 
 vector<function> functions;
 
+
+stack<vector<string>::iterator> break_stmts, continue_stmts;
+
 stack<string> memory;
 pair<string, string> rtn;
 
@@ -104,7 +107,10 @@ bool isIdent(const string &str){
             return false;
         }
     }
-    bool reserved = str != "const" && str != "int" && str != "if" && str != "else" && str != "while" && str != "return";
+    bool reserved = str != "const" && str != "int" && 
+                    str != "if" && str != "else" && 
+                    str != "while" && str != "break" && 
+                    str != "continue" && str != "return";
     return nondigit && reserved;
 }
 
@@ -453,10 +459,19 @@ void Stmt(vector<element> &elements){
             Cond(elements, block_true, block_false);
             if (*sym == ")"){
                 sym++;
+                int br_size = break_stmts.size(), cnt_size = continue_stmts.size();
                 output.push_back("\nx" + to_string(block_true) + ":\n");
                 //cout<<"\nx" + to_string(block_true) + ":"<<endl;
                 Stmt(elements);
+                while (continue_stmts.size() > cnt_size){
+                    output.insert(continue_stmts.top(), "    br label %x" + to_string(block_cond) + "\n");
+                    continue_stmts.pop();
+                }
                 output.push_back("    br label %x" + to_string(block_cond) + "\n");
+                while (break_stmts.size() > br_size){
+                    output.insert(break_stmts.top(), "    br label %x" + to_string(block_false) + "\n");
+                    break_stmts.pop();
+                }
                 //cout<<"    br label %x" + to_string(block_cond)<<endl;
                 output.push_back("\nx" + to_string(block_false) + ":\n");
                 //cout<<"\nx" + to_string(block_false) + ":"<<endl;
@@ -466,6 +481,26 @@ void Stmt(vector<element> &elements){
             }
         }
         else{
+            exit(1);
+        }
+    }
+    else if (*sym == "break"){
+        break_stmts.push(output.end());
+        sym++;
+        if (*sym == ";"){
+            sym++;
+        }
+        else {
+            exit(1);
+        }
+    }
+    else if (*sym == "continue"){
+        continue_stmts.push(output.end());
+        sym++;
+        if (*sym == ";"){
+            sym++;
+        }
+        else {
             exit(1);
         }
     }
