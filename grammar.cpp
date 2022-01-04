@@ -481,6 +481,9 @@ void Stmt(vector<element> &elements){
             exit(1);
         }
     }
+    else if (*sym == ";"){
+        sym++;
+    }
     else{
         Exp(elements, false);
         if (*sym == ";"){
