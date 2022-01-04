@@ -94,9 +94,6 @@ const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putar
 
 vector<function> functions;
 
-
-stack<vector<string>::iterator> break_stmts, continue_stmts;
-
 stack<string> memory;
 pair<string, string> rtn;
 
@@ -459,19 +456,25 @@ void Stmt(vector<element> &elements){
             Cond(elements, block_true, block_false);
             if (*sym == ")"){
                 sym++;
-                int br_size = break_stmts.size(), cnt_size = continue_stmts.size();
+                int br_size = output.size(), cnt_size = output.size();
                 output.push_back("\nx" + to_string(block_true) + ":\n");
                 //cout<<"\nx" + to_string(block_true) + ":"<<endl;
                 Stmt(elements);
-                while (continue_stmts.size() > cnt_size){
-                    output.insert(continue_stmts.top(), "    br label %x" + to_string(block_cond) + "\n");
-                    continue_stmts.pop();
+
+                for (int i = br_size; i < output.size(); i++){
+                    if(output[i] == "continue_record"){
+                        output[i] = "    br label %x" + to_string(block_cond) + "\n";
+                    }
                 }
+
                 output.push_back("    br label %x" + to_string(block_cond) + "\n");
-                while (break_stmts.size() > br_size){
-                    output.insert(break_stmts.top(), "    br label %x" + to_string(block_false) + "\n");
-                    break_stmts.pop();
+                
+                for (int i = cnt_size; i < output.size(); i++){
+                    if(output[i] == "break_record"){
+                        output[i] = "    br label %x" + to_string(block_false) + "\n";
+                    }
                 }
+
                 //cout<<"    br label %x" + to_string(block_cond)<<endl;
                 output.push_back("\nx" + to_string(block_false) + ":\n");
                 //cout<<"\nx" + to_string(block_false) + ":"<<endl;
@@ -485,7 +488,7 @@ void Stmt(vector<element> &elements){
         }
     }
     else if (*sym == "break"){
-        break_stmts.push(output.end());
+        output.push_back("break_record");
         sym++;
         if (*sym == ";"){
             sym++;
@@ -495,7 +498,7 @@ void Stmt(vector<element> &elements){
         }
     }
     else if (*sym == "continue"){
-        continue_stmts.push(output.end());
+        output.push_back("continue_record");
         sym++;
         if (*sym == ";"){
             sym++;
