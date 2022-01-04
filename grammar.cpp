@@ -460,21 +460,19 @@ void Stmt(vector<element> &elements){
                 output.push_back("\nx" + to_string(block_true) + ":\n");
                 //cout<<"\nx" + to_string(block_true) + ":"<<endl;
                 Stmt(elements);
-
                 for (int i = br_size; i < output.size(); i++){
                     if(output[i] == "continue_record"){
                         output[i] = "    br label %x" + to_string(block_cond) + "\n";
+                        //cout<<"    br label %x" + to_string(block_cond)<<endl;
                     }
                 }
-
                 output.push_back("    br label %x" + to_string(block_cond) + "\n");
-                
                 for (int i = cnt_size; i < output.size(); i++){
                     if(output[i] == "break_record"){
                         output[i] = "    br label %x" + to_string(block_false) + "\n";
+                        //cout<<"    br label %x" + to_string(block_false)<<endl;
                     }
                 }
-
                 //cout<<"    br label %x" + to_string(block_cond)<<endl;
                 output.push_back("\nx" + to_string(block_false) + ":\n");
                 //cout<<"\nx" + to_string(block_false) + ":"<<endl;
