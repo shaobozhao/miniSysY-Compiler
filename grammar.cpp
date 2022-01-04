@@ -379,7 +379,7 @@ void BlockItem(vector<element> &elements){
 }
 
 void Stmt(vector<element> &elements){
-    if (isIdent(*sym) && !isFunc(*sym)){
+    if (isIdent(*sym) && !isFunc(*sym) && *(sym + 1) == "="){
         LVal(elements);
         element elem = get_elem_by_name(elements, *sym);
         if (elem.isConst){
@@ -480,9 +480,6 @@ void Stmt(vector<element> &elements){
         else{
             exit(1);
         }
-    }
-    else if (*sym == ";"){
-        sym++;
     }
     else{
         Exp(elements, false);
