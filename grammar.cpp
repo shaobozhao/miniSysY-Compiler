@@ -11,6 +11,8 @@ struct element{
     string name;
     bool isConst;
     string type;
+    int dim = 0;
+    int size = 1;
     int level;
     string reg;
 };
@@ -28,7 +30,7 @@ void ConstDecl(vector<element> &elements);
 void BType();
 void ConstDef(vector<element> &elements);
 void ConstInitVal(vector<element> &elements, element elem);
-void ConstExp(vector<element> &elements, element elem);
+void ConstExp(vector<element> &elements);
 void VarDecl(vector<element> &elements);
 void VarDef(vector<element> &elements);
 void InitVal(vector<element> &elements, element elem);
@@ -83,14 +85,15 @@ element get_elem_by_name(vector<element> &elements, string name){
     return elem;
 }
 
-const function getint = {.name = "getint", .type = "int", .argc = 0, .argv = {}},
-               getch = {.name = "getch", .type = "int", .argc = 0, .argv = {}},
-               getarray = {.name = "getarray", .type = "int", .argc = 1, .argv = {"int*"}},
-               putint = {.name = "putint", .type = "void", .argc = 1, .argv = {"int"}},
-               putch = {.name = "putch", .type = "void", .argc = 1, .argv = {"int"}},
-               putarray = {.name = "putarray", .type = "void", .argc = 2, .argv = {"int", "int*"}};
+const function getint = {.name = "getint", .type = "i32", .argc = 0, .argv = {}},
+               getch = {.name = "getch", .type = "i32", .argc = 0, .argv = {}},
+               getarray = {.name = "getarray", .type = "i32", .argc = 1, .argv = {"i32*"}},
+               putint = {.name = "putint", .type = "void", .argc = 1, .argv = {"i32"}},
+               putch = {.name = "putch", .type = "void", .argc = 1, .argv = {"i32"}},
+               putarray = {.name = "putarray", .type = "void", .argc = 2, .argv = {"i32", "i32*"}},
+               memset = {.name = "memset", .type = "void", .argc = 3, .argv = {"i32*", "i32", "i32"}};
 
-const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putarray};
+const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putarray, memset};
 
 vector<function> functions;
 
@@ -133,12 +136,19 @@ bool isFunc(const string &str){
     }
     else if (call_iter != miniSysY.end()){
         string call_line;
-        if ((*call_iter).type == "int"){
-            call_line = "declare i32 @" + (*call_iter).name + "()\n";
+        if ((*call_iter).type == "i32"){
+            call_line = "declare i32 @" + (*call_iter).name + "(";
         }
         else{
-            call_line = "declare void @" + (*call_iter).name + "(i32)\n";
+            call_line = "declare void @" + (*call_iter).name + "(";
         }
+        for (int i = 0; i <(*call_iter).argc; i++){
+            call_line += (*call_iter).argv[i];
+            if (i < (*call_iter).argc - 1){
+                call_line += ", ";
+            }
+        }
+        call_line += ")\n";
         output.insert(output.begin(), call_line);
         functions.push_back(*call_iter);
         return true;
@@ -226,24 +236,185 @@ void ConstDef(vector<element> &elements){
     element elem;
     elem.name = name;
     elem.isConst = true;
-    elem.type = "int";
+    if (*sym == "["){
+        elem.type = "";
+        while (*sym == "["){
+            elem.type += "[";
+            sym++;
+            ConstExp(elements);
+            elem.type += (rtn.first + " x ");
+            if (*sym == "]"){
+                elem.dim++;
+                elem.size *= stoi(rtn.first, 0);
+                sym++;
+            }
+            else{
+                exit(1);
+            }
+        }
+        elem.type += "i32" + string(elem.dim, ']');
+    }
+    else{
+        elem.type = "i32";
+    }
     elem.level = level;
     if (*sym == "="){
         sym++;
+        if (elem.type != "i32"){
+            if (elem.level == 0){
+                output.push_back("@" + elem.name + " = dso_local constant ");
+                //cout << "@" + elem.name + " = dso_local constant ";
+            }
+            else{
+                elem.reg = "%x" + to_string(memory.size());
+                output.push_back("    " + elem.reg + " = alloca " + elem.type + "\n");
+                //cout << "    " + elem.reg + " = alloca " + elem.type << endl;
+                memory.push("");
+            }
+        }
     }
     else{
         exit(1);
     }
     ConstInitVal(elements, elem);
-    elem.reg = rtn.first;
+    if (elem.type == "i32"){
+        elem.reg = rtn.first;
+    }
+    else{
+        if (elem.level == 0){
+            output.push_back("\n");
+            //cout << endl;
+            elem.reg = "@" + elem.name;
+        }
+    }
     elements.push_back(elem);
 }
 
 void ConstInitVal(vector<element> &elements, element elem){
-    ConstExp(elements, elem);
+    if (elem.type == "i32"){
+        ConstExp(elements);
+        if (elem.name == "sub_elem"){
+            output.push_back("i32 " + rtn.first);
+            //cout << "i32 " + rtn.first;
+        }
+    }
+    else{
+        if (elem.level == 0){
+            if (*sym == "{"){
+                sym++;
+                output.push_back(elem.type);
+                //cout << elem.type;
+                if (*sym != "}"){
+                    output.push_back(" [");
+                    //cout << " [";
+                    int pos = elem.type.find("x") + 2, len = elem.type.size() - 1 - pos;
+                    element sub_elem = {.name = "sub_elem", .isConst = true, .type = elem.type.substr(pos, len), .dim = elem.dim - 1, .level = elem.level, .reg = ""};
+                    ConstInitVal(elements, sub_elem);
+                    int i = 1, n = stoi(elem.type.substr(1, elem.type.find(" ") - 1), 0);
+                    while (*sym == ","){
+                        output.push_back(", ");
+                        //cout << ", ";
+                        sym++;
+                        ConstInitVal(elements, sub_elem);
+                        i++;
+                    }
+                    while (i < n){
+                        output.push_back(", " + sub_elem.type);
+                        //cout << ", ";
+                        if (sub_elem.type == "i32"){
+                            output.push_back(" 0");
+                            //cout << " 0";
+                        }
+                        else{
+                            output.push_back(" zeroinitializer");
+                            //cout << " zeroinitializer";
+                        }
+                        i++;
+                    }
+                    if (i > n){
+                        exit(1);
+                    }
+                    output.push_back("]");
+                    //cout << "]";
+                }
+                else{
+                    output.push_back(" zeroinitializer");
+                    //cout << " zeroinitializer";
+                }
+                if (*sym == "}"){
+                    sym++;
+                }
+                else{
+                    exit(1);
+                }
+            }
+            else{
+                exit(1);
+            }
+        }
+        else{
+            int new_reg = memory.size();
+            output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+            for (int i = 0; i < elem.dim; i++){
+                output.push_back(", i32 0");
+                //cout << ", i32 0";
+            }
+            output.push_back("\n");
+            //cout << endl;
+            memory.push(elem.reg);
+            isFunc("memset");
+            output.push_back("    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")\n");
+            //cout << "    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")" <<endl;
+            int dim = -1, index[elem.dim] = {0};
+            if(*sym == "{"){
+                dim++;
+                sym++;
+                while (dim >= 0){
+                    if (*sym == "{"){
+                        dim++;
+                        sym++;
+                    }
+                    else if (*sym == ",")
+                    {
+                        index[dim]++;
+                        sym++;
+                    }
+                    else if (*sym == "}"){
+                        index[dim] = 0;
+                        dim--;
+                        sym++;
+                    }
+                    else{
+                        new_reg = memory.size();
+                        output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+                        //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+                        for (int i = 0; i < elem.dim; i++){
+                            output.push_back(", i32 " + to_string(index[i]));
+                            //cout << ", i32 " + to_string(index[i]);
+                        }
+                        output.push_back("\n");
+                        //cout << endl;
+                        memory.push(elem.reg);
+                        /*int ptr_reg = new_reg;
+                        new_reg = memory.size();
+                        output.push_back("    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0\n");
+                        //cout << "    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0" << endl;
+                        memory.push("%x" + to_string(ptr_reg));*/
+                        ConstExp(elements);
+                        output.push_back("    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) + "\n");
+                        //cout << "    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) <<endl;
+                    }
+                }
+            }
+            else{
+                exit(1);
+            }
+        }
+    }
 }
 
-void ConstExp(vector<element> &elements, element elem){
+void ConstExp(vector<element> &elements){
     AddExp(elements, true);
 }
 
@@ -271,42 +442,208 @@ void VarDef(vector<element> &elements){
     element elem;
     elem.name = name;
     elem.isConst = false;
-    elem.type = "int";
+    if (*sym == "["){
+        elem.type = "";
+        while (*sym == "["){
+            elem.type += "[";
+            sym++;
+            ConstExp(elements);
+            elem.type += (rtn.first + " x ");
+            if (*sym == "]"){
+                elem.dim++;
+                elem.size *= stoi(rtn.first, 0);
+                sym++;
+            }
+            else{
+                exit(1);
+            }           
+        }
+        elem.type += "i32" + string(elem.dim, ']');
+    }
+    else{
+        elem.type = "i32";
+    }
     elem.level = level;
-    if (level == 0){
+    if (elem.level == 0){
         elem.reg = "@" + elem.name;
-        output.push_back(elem.reg + " = dso_local global i32 ");
-        //cout << elem.reg + " = dso_local global i32 ";
+        output.push_back(elem.reg + " = dso_local global ");
+        //cout << elem.reg + " = dso_local global ";
+        if (elem.type == "i32"){
+            output.push_back("i32 ");
+            //cout <<"i32 ";
+        }
     }
     else{
         elem.reg = "%x" + to_string(memory.size());
-        output.push_back("    " + elem.reg + " = alloca i32\n");
-        //cout << "    " + elem.reg + " = alloca i32" << endl;
+        output.push_back("    " + elem.reg + " = alloca ");
+        //cout << "    " + elem.reg + " = alloca ";
+        if (elem.type == "i32"){
+            output.push_back("i32\n");
+            //cout << "i32" << endl;
+        }
+        else{
+            output.push_back(elem.type + "\n");
+            //cout << elem.type << endl;
+        }
+        
         memory.push("");
     }
     if (*sym == "="){
         sym++;
         InitVal(elements, elem);
+        if (elem.level == 0){
+            output.push_back("\n");
+            //cout << endl;
+        }
     }
     else{
-        if (level == 0){
-            output.push_back("0\n");
-            //cout << 0 << endl;
+        if (elem.level == 0){
+            if (elem.type == "i32"){
+                output.push_back("0\n");
+                //cout << 0 << endl;
+            }
+            else{
+                output.push_back(elem.type + " zeroinitializer\n");
+                //cout << elem.type + " zeroinitializer" << endl;
+            }
         }
     }
     elements.push_back(elem);
 }
 
 void InitVal(vector<element> &elements, element elem){
-    if (level == 0){
-        Exp(elements, true);
-        output.push_back(rtn.first + "\n");
-        //cout << rtn.first << endl;
+    if (elem.level == 0){
+        if (elem.type == "i32"){
+            Exp(elements, true);
+            if (elem.name != "sub_elem"){
+                output.push_back(rtn.first);
+                //cout << rtn.first;
+            }
+            else{
+                output.push_back("i32 " + rtn.first);
+                //cout << "i32 " + rtn.first;
+            }
+        }
+        else{
+            if (*sym == "{"){
+                sym++;
+                output.push_back(elem.type);
+                //cout << elem.type;
+                if (*sym != "}"){
+                    output.push_back(" [");
+                    //cout << " [";
+                    int pos = elem.type.find("x") + 2, len = elem.type.size() - 1 - pos;
+                    element sub_elem = {.name = "sub_elem", .isConst = elem.isConst, .type = elem.type.substr(pos, len), .dim = elem.dim - 1, .level = elem.level, .reg = ""};
+                    InitVal(elements, sub_elem);
+                    int i = 1, n = stoi(elem.type.substr(1, elem.type.find(" ") - 1), 0);
+                    while (*sym == ","){
+                        output.push_back(", ");
+                        //cout << ", ";
+                        sym++;
+                        InitVal(elements, sub_elem);
+                        i++;
+                    }
+                    while (i < n){
+                        output.push_back(", " + sub_elem.type);
+                        //cout << ", " + sub_elem.type;
+                        if (sub_elem.type == "i32"){
+                            output.push_back(" 0");
+                            //cout << " 0";
+                        }
+                        else{
+                            output.push_back(" zeroinitializer");
+                            //cout << " zeroinitializer";
+                        }
+                        i++;
+                    }
+                    if (i > n){
+                        exit(1);
+                    }
+                    output.push_back("]");
+                    //cout << "]";
+                }
+                else{
+                    output.push_back(" zeroinitializer");
+                    //cout << " zeroinitializer";
+                }
+                if (*sym == "}"){
+                    sym++;
+                }
+                else{
+                    exit(1);
+                }   
+            }
+            else
+            {
+                exit(1);
+            }
+        }
     }
     else{
-        Exp(elements, false);
-        output.push_back("    store i32 " + rtn.first + ", i32* " + elem.reg + "\n");
-        //cout << "    store i32 " + rtn.first + ", i32* " + elem.reg << endl;
+        if (elem.type == "i32"){
+            Exp(elements, false);
+            output.push_back("    store i32 " + rtn.first + ", i32* " + elem.reg + "\n");
+            //cout << "    store i32 " + rtn.first + ", i32* " + elem.reg << endl;
+        }
+        else{
+            int new_reg = memory.size();
+            output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+            for (int i = 0; i < elem.dim; i++){
+                output.push_back(", i32 0");
+                //cout << ", i32 0";
+            }
+            output.push_back("\n");
+            //cout << endl;
+            memory.push(elem.reg);
+            isFunc("memset");
+            output.push_back("    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")\n");
+            //cout << "    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")" <<endl;
+            int dim = -1, index[elem.dim] = {0};
+            if(*sym == "{"){
+                dim++;
+                sym++;
+                while (dim >= 0){
+                    if (*sym == "{"){
+                        dim++;
+                        sym++;
+                    }
+                    else if (*sym == ",")
+                    {
+                        index[dim]++;
+                        sym++;
+                    }
+                    else if (*sym == "}"){
+                        index[dim] = 0;
+                        dim--;
+                        sym++;
+                    }
+                    else{
+                        new_reg = memory.size();
+                        output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+                        //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+                        for (int i = 0; i < elem.dim; i++){
+                            output.push_back(", i32 " + to_string(index[i]));
+                            //cout << ", i32 " + to_string(index[i]);
+                        }
+                        output.push_back("\n");
+                        //cout << endl;
+                        memory.push(elem.reg);
+                        /*int ptr_reg = new_reg;
+                        new_reg = memory.size();
+                        output.push_back("    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0\n");
+                        //cout << "    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0" << endl;
+                        memory.push("%x" + to_string(ptr_reg));*/
+                        Exp(elements, false);
+                        output.push_back("    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) + "\n");
+                        //cout << "    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) <<endl;
+                    }
+                }
+            }
+            else{
+                exit(1);
+            }
+        }
     }
 }
 
@@ -388,12 +725,48 @@ void Stmt(vector<element> &elements){
         if (elem.isConst){
             exit(1);
         }
-        sym++;
+        string reg;
+        if (elem.type == "i32"){
+            reg = elem.reg;
+            sym++;
+        }
+        else{
+            sym++;
+            int new_reg = memory.size();
+            output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+            int dim = 0;
+            while (*sym == "["){
+                sym++;
+                Exp(elements, false);
+                output.push_back(", i32 " + rtn.first);
+                //cout << ", i32 " + rtn.first;
+                if (*sym == "]"){
+                    dim++;
+                    sym++;
+                }
+                else{
+                    exit(1);
+                }                
+            }
+            if (dim != elem.dim){
+                exit(1);
+            }
+            output.push_back("\n");
+            //cout << endl;
+            memory.push(elem.reg);
+            /*int ptr_reg = new_reg;
+            new_reg = memory.size();
+            output.push_back("    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0\n");
+            //cout << "    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0" << endl;
+            memory.push("%x" + to_string(ptr_reg));*/
+            reg = "%x" + to_string(new_reg);
+        }        
         if (*sym == "="){
             sym++;
             Exp(elements, false);
-            output.push_back("    store i32 " + rtn.first + ", i32* " + elem.reg + "\n");
-            //cout << "    store i32 " + rtn.first + ", i32* " + elem.reg << endl;
+            output.push_back("    store i32 " + rtn.first + ", i32* " + reg + "\n");
+            //cout << "    store i32 " + rtn.first + ", i32* " + reg << endl;
             if (*sym == ";"){
                 sym++;
             }
@@ -565,9 +938,10 @@ void PrimaryExp(vector<element> &elements, bool isConst){
         LVal(elements);
         element elem = get_elem_by_name(elements, *sym);
         if (isConst){
-            if (elem.isConst){
+            if (elem.isConst && elem.type == "i32"){
                 rtn.first = elem.reg;
                 rtn.second = "i32";
+                sym++;
             }
             else{
                 exit(1);
@@ -575,19 +949,90 @@ void PrimaryExp(vector<element> &elements, bool isConst){
         }
         else{
             if (elem.isConst){
-                rtn.first = elem.reg;
-                rtn.second = "i32";
+                if (elem.type == "i32"){
+                    rtn.first = elem.reg;
+                    rtn.second = "i32";
+                    sym++;
+                }
+                else{
+                    sym++;
+                    int new_reg = memory.size();
+                    output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+                    int dim = 0;
+                    while (*sym == "["){
+                        sym++;
+                        Exp(elements, false);
+                        output.push_back(", i32 " + rtn.first);
+                        //cout << ", i32 " + rtn.first;
+                        if (*sym == "]"){
+                            dim++;
+                            sym++;
+                        }
+                        else{
+                            exit(1);
+                        }
+                    }
+                    if (dim != elem.dim){
+                        exit(1);
+                    }
+                    output.push_back("\n");
+                    //cout << endl;
+                    memory.push(elem.reg);
+                    int ptr_reg = new_reg;
+                    new_reg = memory.size();
+                    output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) + "\n");
+                    //cout << "    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) << endl;
+                    memory.push("%x" + to_string(ptr_reg));
+                    rtn.first = "%x" + to_string(new_reg);
+                    rtn.second = "i32";
+                }
             }
             else{
-                int new_reg = memory.size();
-                output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg << endl;
-                memory.push(elem.reg);
-                rtn.first = "%x" + to_string(new_reg);
-                rtn.second = "i32";
+                if (elem.type == "i32"){
+                    int new_reg = memory.size();
+                    output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg + "\n");
+                    //cout << "    %x" + to_string(new_reg) + " = load i32, i32* " + elem.reg << endl;
+                    memory.push(elem.reg);
+                    rtn.first = "%x" + to_string(new_reg);
+                    rtn.second = "i32";
+                    sym++;
+                }
+                else{
+                    sym++;
+                    int new_reg = memory.size();
+                    output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+                    int dim = 0;
+                    while (*sym == "["){
+                        sym++;
+                        Exp(elements, false);
+                        output.push_back(", i32 " + rtn.first);
+                        //cout << ", i32 " + rtn.first;
+                        if (*sym == "]"){
+                            dim++;
+                            sym++;
+                        }
+                        else{
+                            exit(1);
+                        }
+                    }
+                    if (dim != elem.dim){
+                        exit(1);
+                    }
+                    output.push_back("\n");
+                    //cout << endl;
+                    memory.push(elem.reg);
+                    int ptr_reg = new_reg;
+                    new_reg = memory.size();
+                    output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) + "\n");
+                    //cout << "    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) << endl;
+                    memory.push("%x" + to_string(ptr_reg));
+                    rtn.first = "%x" + to_string(new_reg);
+                    rtn.second = "i32";
+                }
             }
         }
-        sym++;
     }
     else{
         exit(1);
@@ -604,7 +1049,7 @@ void UnaryExp(vector<element> &elements, bool isConst){
                 string params;
                 FuncRParams(elements, func, params);
                 if (*sym == ")"){
-                    if (func.type == "int"){
+                    if (func.type == "i32"){
                         int new_reg = memory.size();
                         output.push_back("    %x" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")\n");
                         //cout << "    %x" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")" << endl;
@@ -684,8 +1129,13 @@ void FuncRParams(vector<element> &elements, function func, string &params){
     int argc = 0;
     while (*sym != ")"){
         Exp(elements, false);
-        params += ("i32 " + rtn.first);
-        argc++;
+        if (func.argv[argc] == rtn.second){
+            params += (func.argv[argc] + " " + rtn.first);
+            argc++;
+        }
+        else{
+            exit(1);
+        }
         if (*sym == ","){
             params += ", ";
             sym++;
