@@ -709,7 +709,7 @@ void BlockItem(vector<element> &elements){
 }
 
 void Stmt(vector<element> &elements){
-    if (isIdent(*sym) && !isFunc(*sym) && *(sym + 1) == "="){
+    if (isIdent(*sym) && !isFunc(*sym) && (*(sym + 1) == "=" || *(sym + 1) == "[")){
         LVal(elements);
         element elem = get_elem_by_name(elements, *sym);
         if (elem.isConst){
