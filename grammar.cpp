@@ -396,11 +396,6 @@ void ConstInitVal(vector<element> &elements, element elem){
                         output.push_back("\n");
                         //cout << endl;
                         memory.push(elem.reg);
-                        /*int ptr_reg = new_reg;
-                        new_reg = memory.size();
-                        output.push_back("    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0\n");
-                        //cout << "    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0" << endl;
-                        memory.push("%x" + to_string(ptr_reg));*/
                         ConstExp(elements);
                         output.push_back("    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) + "\n");
                         //cout << "    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) <<endl;
@@ -629,11 +624,6 @@ void InitVal(vector<element> &elements, element elem){
                         output.push_back("\n");
                         //cout << endl;
                         memory.push(elem.reg);
-                        /*int ptr_reg = new_reg;
-                        new_reg = memory.size();
-                        output.push_back("    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0\n");
-                        //cout << "    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0" << endl;
-                        memory.push("%x" + to_string(ptr_reg));*/
                         Exp(elements, false);
                         output.push_back("    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) + "\n");
                         //cout << "    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) <<endl;
@@ -732,15 +722,12 @@ void Stmt(vector<element> &elements){
         }
         else{
             sym++;
-            int new_reg = memory.size();
-            output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
-            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
             int dim = 0;
+            string index[elem.dim];
             while (*sym == "["){
                 sym++;
                 Exp(elements, false);
-                output.push_back(", i32 " + rtn.first);
-                //cout << ", i32 " + rtn.first;
+                index[dim] = rtn.first;
                 if (*sym == "]"){
                     dim++;
                     sym++;
@@ -752,14 +739,16 @@ void Stmt(vector<element> &elements){
             if (dim != elem.dim){
                 exit(1);
             }
+            int new_reg = memory.size();
+            output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+            for (int i = 0; i < dim; i++){
+                output.push_back(", i32 " + index[i]);
+                //cout << ", i32 " + index[i];
+            }
             output.push_back("\n");
             //cout << endl;
             memory.push(elem.reg);
-            /*int ptr_reg = new_reg;
-            new_reg = memory.size();
-            output.push_back("    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0\n");
-            //cout << "    %x" + to_string(new_reg) + " = getelementptr i32, i32* %x" + to_string(ptr_reg) + ", i32 0" << endl;
-            memory.push("%x" + to_string(ptr_reg));*/
             reg = "%x" + to_string(new_reg);
         }        
         if (*sym == "="){
@@ -956,15 +945,12 @@ void PrimaryExp(vector<element> &elements, bool isConst){
                 }
                 else{
                     sym++;
-                    int new_reg = memory.size();
-                    output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
-                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
                     int dim = 0;
+                    string index[elem.dim];
                     while (*sym == "["){
                         sym++;
                         Exp(elements, false);
-                        output.push_back(", i32 " + rtn.first);
-                        //cout << ", i32 " + rtn.first;
+                        index[dim] = rtn.first;
                         if (*sym == "]"){
                             dim++;
                             sym++;
@@ -973,8 +959,15 @@ void PrimaryExp(vector<element> &elements, bool isConst){
                             exit(1);
                         }
                     }
-                    if (dim != elem.dim){
+                    if (dim > elem.dim){
                         exit(1);
+                    }
+                    int new_reg = memory.size();
+                    output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+                    for (int i = 0; i < dim; i++){
+                        output.push_back(", i32 " + index[i]);
+                        //cout << ", i32 " + index[i];
                     }
                     output.push_back("\n");
                     //cout << endl;
@@ -1000,15 +993,12 @@ void PrimaryExp(vector<element> &elements, bool isConst){
                 }
                 else{
                     sym++;
-                    int new_reg = memory.size();
-                    output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
-                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
                     int dim = 0;
+                    string index[elem.dim];
                     while (*sym == "["){
                         sym++;
                         Exp(elements, false);
-                        output.push_back(", i32 " + rtn.first);
-                        //cout << ", i32 " + rtn.first;
+                        index[dim] = rtn.first;
                         if (*sym == "]"){
                             dim++;
                             sym++;
@@ -1017,8 +1007,15 @@ void PrimaryExp(vector<element> &elements, bool isConst){
                             exit(1);
                         }
                     }
-                    if (dim != elem.dim){
+                    if (dim > elem.dim){
                         exit(1);
+                    }
+                    int new_reg = memory.size();
+                    output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0");
+                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + elem.type + ", " + elem.type + "* " + elem.reg + ", i32 0";
+                    for (int i = 0; i < dim; i++){
+                        output.push_back(", i32 " + index[i]);
+                        //cout << ", i32 " + index[i];
                     }
                     output.push_back("\n");
                     //cout << endl;
