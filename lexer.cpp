@@ -71,7 +71,7 @@ void process(string token){
         else if (isdigit(token.at(pos))){
             pos += process_number(token, pos);
         }
-        else if (token.at(pos) == '(' || token.at(pos) == ')' || token.at(pos) == '{' || token.at(pos) == '}'){
+        else if (token.at(pos) == '(' || token.at(pos) == ')' || token.at(pos) == '[' || token.at(pos) == ']' || token.at(pos) == '{' || token.at(pos) == '}'){
             syms.push_back(string(1, token.at(pos)));
             pos++;
         }
