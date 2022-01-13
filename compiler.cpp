@@ -3,7 +3,7 @@
 #include <sstream>
 #include <cstdio>
 #include "lexer.cpp"
-#include "grammar.cpp"
+#include "parser.cpp"
 
 using namespace std;
 
