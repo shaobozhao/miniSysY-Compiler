@@ -5,20 +5,20 @@
 
 using namespace std;
 
-int process_word(string token, int pos){
+int process_word(string group, int pos){
     string word;
-    while (pos < token.length() && (isalnum(token.at(pos)) || token.at(pos) == '_')){
-        word.push_back(token.at(pos));
+    while (pos < group.length() && (isalnum(group.at(pos)) || group.at(pos) == '_')){
+        word.push_back(group.at(pos));
         pos++;
     }
-    syms.push_back(word);
+    tokens.push_back(word);
     return word.length();
 }
 
-int process_number(string token, int pos){
+int process_number(string group, int pos){
     string number;
-    while (pos < token.length() && isalnum(token.at(pos))){
-        number.push_back(token.at(pos));
+    while (pos < group.length() && isalnum(group.at(pos))){
+        number.push_back(group.at(pos));
         pos++;
     }
 
@@ -54,7 +54,7 @@ int process_number(string token, int pos){
         base = 16;
     }
     if (decimal || octal || hexadecimal){
-        syms.push_back(to_string(stoi(number, 0, base)));
+        tokens.push_back(to_string(stoi(number, 0, base)));
     }
     else{
         exit(1);
@@ -62,44 +62,44 @@ int process_number(string token, int pos){
     return number.length();
 }
 
-void process(string token){
+void process(string group){
     int pos = 0;
-    while (pos < token.length()){
-        if (isalpha(token.at(pos)) || token.at(pos) == '_'){
-            pos += process_word(token, pos);
+    while (pos < group.length()){
+        if (isalpha(group.at(pos)) || group.at(pos) == '_'){
+            pos += process_word(group, pos);
         }
-        else if (isdigit(token.at(pos))){
-            pos += process_number(token, pos);
+        else if (isdigit(group.at(pos))){
+            pos += process_number(group, pos);
         }
-        else if (token.at(pos) == '(' || token.at(pos) == ')' || token.at(pos) == '[' || token.at(pos) == ']' || token.at(pos) == '{' || token.at(pos) == '}'){
-            syms.push_back(string(1, token.at(pos)));
+        else if (group.at(pos) == '(' || group.at(pos) == ')' || group.at(pos) == '[' || group.at(pos) == ']' || group.at(pos) == '{' || group.at(pos) == '}'){
+            tokens.push_back(string(1, group.at(pos)));
             pos++;
         }
-        else if (token.at(pos) == '+' || token.at(pos) == '-' || token.at(pos) == '*' || token.at(pos) == '/' || token.at(pos) == '%'){
-            syms.push_back(string(1, token.at(pos)));
+        else if (group.at(pos) == '+' || group.at(pos) == '-' || group.at(pos) == '*' || group.at(pos) == '/' || group.at(pos) == '%'){
+            tokens.push_back(string(1, group.at(pos)));
             pos++;
         }
-        else if (token.at(pos) == '<' || token.at(pos) == '>' || token.at(pos) == '=' || token.at(pos) == '!'){
-            if (pos < token.length() - 1 && token.at(pos + 1) == '='){
-                syms.push_back(string(1, token.at(pos)) + "=");
+        else if (group.at(pos) == '<' || group.at(pos) == '>' || group.at(pos) == '=' || group.at(pos) == '!'){
+            if (pos < group.length() - 1 && group.at(pos + 1) == '='){
+                tokens.push_back(string(1, group.at(pos)) + "=");
                 pos += 2;
             }
             else{
-                syms.push_back(string(1, token.at(pos)));
+                tokens.push_back(string(1, group.at(pos)));
                 pos++;
             }
         }
-        else if (token.at(pos) == '&' || token.at(pos) == '|'){
-            if (pos < token.length() - 1 && token.at(pos + 1) == token.at(pos)){
-                syms.push_back(string(2, token.at(pos)));
+        else if (group.at(pos) == '&' || group.at(pos) == '|'){
+            if (pos < group.length() - 1 && group.at(pos + 1) == group.at(pos)){
+                tokens.push_back(string(2, group.at(pos)));
                 pos += 2;
             }
             else{
                 exit(1);
             }
         }
-        else if (token.at(pos) == ',' || token.at(pos) == ';'){
-            syms.push_back(string(1, token.at(pos)));
+        else if (group.at(pos) == ',' || group.at(pos) == ';'){
+            tokens.push_back(string(1, group.at(pos)));
             pos++;
         }
         else{

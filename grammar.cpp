@@ -107,10 +107,9 @@ bool isIdent(const string &str){
             return false;
         }
     }
-    bool reserved = str != "const" && str != "int" &&
-                    str != "if" && str != "else" &&
-                    str != "while" && str != "break" &&
-                    str != "continue" && str != "return";
+    bool reserved = str != "const" && str != "int" && str != "void" &&
+                    str != "if" && str != "else" && str != "while" &&
+                    str != "break" && str != "continue" && str != "return";
     return nondigit && reserved;
 }
 
@@ -175,8 +174,8 @@ bool isnum(const string &str){
 
 void CompUnit(){
     vector<element> elements;
-    while (sym != syms.end()){
-        if (*sym == "const" || (*sym == "int" && *(sym + 2) != "(")){
+    while (token_iter != tokens.end()){
+        if (*token_iter == "const" || (*token_iter == "int" && *(token_iter + 2) != "(")){
             Decl(elements);
         }
         else{
@@ -186,10 +185,10 @@ void CompUnit(){
 }
 
 void Decl(vector<element> &elements){
-    if (*sym == "const"){
+    if (*token_iter == "const"){
         ConstDecl(elements);
     }
-    else if (*sym == "int"){
+    else if (*token_iter == "int"){
         VarDecl(elements);
     }
     else{
@@ -198,16 +197,16 @@ void Decl(vector<element> &elements){
 }
 
 void ConstDecl(vector<element> &elements){
-    if (*sym == "const"){
-        sym++;
+    if (*token_iter == "const"){
+        token_iter++;
         BType();
         ConstDef(elements);
-        while (*sym == ","){
-            sym++;
+        while (*token_iter == ","){
+            token_iter++;
             ConstDef(elements);
         }
-        if (*sym == ";"){
-            sym++;
+        if (*token_iter == ";"){
+            token_iter++;
         }
         else{
             exit(1);
@@ -219,8 +218,8 @@ void ConstDecl(vector<element> &elements){
 }
 
 void BType(){
-    if (*sym == "int"){
-        sym++;
+    if (*token_iter == "int"){
+        token_iter++;
     }
     else{
         exit(1);
@@ -228,7 +227,7 @@ void BType(){
 }
 
 void ConstDef(vector<element> &elements){
-    string name = *sym;
+    string name = *token_iter;
     Ident();
     if (is_element(elements, name)){
         exit(1);
@@ -236,17 +235,17 @@ void ConstDef(vector<element> &elements){
     element elem;
     elem.name = name;
     elem.isConst = true;
-    if (*sym == "["){
+    if (*token_iter == "["){
         elem.type = "";
-        while (*sym == "["){
+        while (*token_iter == "["){
             elem.type += "[";
-            sym++;
+            token_iter++;
             ConstExp(elements);
             elem.type += (rtn.first + " x ");
-            if (*sym == "]"){
+            if (*token_iter == "]"){
                 elem.dim++;
                 elem.size *= stoi(rtn.first, 0);
-                sym++;
+                token_iter++;
             }
             else{
                 exit(1);
@@ -258,8 +257,8 @@ void ConstDef(vector<element> &elements){
         elem.type = "i32";
     }
     elem.level = level;
-    if (*sym == "="){
-        sym++;
+    if (*token_iter == "="){
+        token_iter++;
         if (elem.type != "i32"){
             if (elem.level == 0){
                 output.push_back("@" + elem.name + " = dso_local constant ");
@@ -300,21 +299,21 @@ void ConstInitVal(vector<element> &elements, element elem){
     }
     else{
         if (elem.level == 0){
-            if (*sym == "{"){
-                sym++;
+            if (*token_iter == "{"){
+                token_iter++;
                 output.push_back(elem.type);
                 //cout << elem.type;
-                if (*sym != "}"){
+                if (*token_iter != "}"){
                     output.push_back(" [");
                     //cout << " [";
                     int pos = elem.type.find("x") + 2, len = elem.type.size() - 1 - pos;
                     element sub_elem = {.name = "sub_elem", .isConst = true, .type = elem.type.substr(pos, len), .dim = elem.dim - 1, .level = elem.level, .reg = ""};
                     ConstInitVal(elements, sub_elem);
                     int i = 1, n = stoi(elem.type.substr(1, elem.type.find(" ") - 1), 0);
-                    while (*sym == ","){
+                    while (*token_iter == ","){
                         output.push_back(", ");
                         //cout << ", ";
-                        sym++;
+                        token_iter++;
                         ConstInitVal(elements, sub_elem);
                         i++;
                     }
@@ -341,8 +340,8 @@ void ConstInitVal(vector<element> &elements, element elem){
                     output.push_back(" zeroinitializer");
                     //cout << " zeroinitializer";
                 }
-                if (*sym == "}"){
-                    sym++;
+                if (*token_iter == "}"){
+                    token_iter++;
                 }
                 else{
                     exit(1);
@@ -367,23 +366,23 @@ void ConstInitVal(vector<element> &elements, element elem){
             output.push_back("    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")\n");
             //cout << "    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")" <<endl;
             int dim = -1, index[elem.dim] = {0};
-            if(*sym == "{"){
+            if(*token_iter == "{"){
                 dim++;
-                sym++;
+                token_iter++;
                 while (dim >= 0){
-                    if (*sym == "{"){
+                    if (*token_iter == "{"){
                         dim++;
-                        sym++;
+                        token_iter++;
                     }
-                    else if (*sym == ",")
+                    else if (*token_iter == ",")
                     {
                         index[dim]++;
-                        sym++;
+                        token_iter++;
                     }
-                    else if (*sym == "}"){
+                    else if (*token_iter == "}"){
                         index[dim] = 0;
                         dim--;
-                        sym++;
+                        token_iter++;
                     }
                     else{
                         new_reg = memory.size();
@@ -416,12 +415,12 @@ void ConstExp(vector<element> &elements){
 void VarDecl(vector<element> &elements){
     BType();
     VarDef(elements);
-    while (*sym == ","){
-        sym++;
+    while (*token_iter == ","){
+        token_iter++;
         VarDef(elements);
     }
-    if (*sym == ";"){
-        sym++;
+    if (*token_iter == ";"){
+        token_iter++;
     }
     else{
         exit(1);
@@ -429,7 +428,7 @@ void VarDecl(vector<element> &elements){
 }
 
 void VarDef(vector<element> &elements){
-    string name = *sym;
+    string name = *token_iter;
     Ident();
     if (is_element(elements, name)){
         exit(1);
@@ -437,17 +436,17 @@ void VarDef(vector<element> &elements){
     element elem;
     elem.name = name;
     elem.isConst = false;
-    if (*sym == "["){
+    if (*token_iter == "["){
         elem.type = "";
-        while (*sym == "["){
+        while (*token_iter == "["){
             elem.type += "[";
-            sym++;
+            token_iter++;
             ConstExp(elements);
             elem.type += (rtn.first + " x ");
-            if (*sym == "]"){
+            if (*token_iter == "]"){
                 elem.dim++;
                 elem.size *= stoi(rtn.first, 0);
-                sym++;
+                token_iter++;
             }
             else{
                 exit(1);
@@ -483,8 +482,8 @@ void VarDef(vector<element> &elements){
         
         memory.push("");
     }
-    if (*sym == "="){
-        sym++;
+    if (*token_iter == "="){
+        token_iter++;
         InitVal(elements, elem);
         if (elem.level == 0){
             output.push_back("\n");
@@ -520,21 +519,21 @@ void InitVal(vector<element> &elements, element elem){
             }
         }
         else{
-            if (*sym == "{"){
-                sym++;
+            if (*token_iter == "{"){
+                token_iter++;
                 output.push_back(elem.type);
                 //cout << elem.type;
-                if (*sym != "}"){
+                if (*token_iter != "}"){
                     output.push_back(" [");
                     //cout << " [";
                     int pos = elem.type.find("x") + 2, len = elem.type.size() - 1 - pos;
                     element sub_elem = {.name = "sub_elem", .isConst = elem.isConst, .type = elem.type.substr(pos, len), .dim = elem.dim - 1, .level = elem.level, .reg = ""};
                     InitVal(elements, sub_elem);
                     int i = 1, n = stoi(elem.type.substr(1, elem.type.find(" ") - 1), 0);
-                    while (*sym == ","){
+                    while (*token_iter == ","){
                         output.push_back(", ");
                         //cout << ", ";
-                        sym++;
+                        token_iter++;
                         InitVal(elements, sub_elem);
                         i++;
                     }
@@ -561,8 +560,8 @@ void InitVal(vector<element> &elements, element elem){
                     output.push_back(" zeroinitializer");
                     //cout << " zeroinitializer";
                 }
-                if (*sym == "}"){
-                    sym++;
+                if (*token_iter == "}"){
+                    token_iter++;
                 }
                 else{
                     exit(1);
@@ -595,23 +594,23 @@ void InitVal(vector<element> &elements, element elem){
             output.push_back("    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")\n");
             //cout << "    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(elem.size * 4) + ")" <<endl;
             int dim = -1, index[elem.dim] = {0};
-            if(*sym == "{"){
+            if(*token_iter == "{"){
                 dim++;
-                sym++;
+                token_iter++;
                 while (dim >= 0){
-                    if (*sym == "{"){
+                    if (*token_iter == "{"){
                         dim++;
-                        sym++;
+                        token_iter++;
                     }
-                    else if (*sym == ",")
+                    else if (*token_iter == ",")
                     {
                         index[dim]++;
-                        sym++;
+                        token_iter++;
                     }
-                    else if (*sym == "}"){
+                    else if (*token_iter == "}"){
                         index[dim] = 0;
                         dim--;
-                        sym++;
+                        token_iter++;
                     }
                     else{
                         new_reg = memory.size();
@@ -643,14 +642,14 @@ void FuncDef(vector<element> &elements){
     output.push_back("@main");
     //cout << "@main";
     memory.push("main");
-    if (*sym == "("){
+    if (*token_iter == "("){
         output.push_back("(");
         //cout << "(";
-        sym++;
-        if (*sym == ")"){
+        token_iter++;
+        if (*token_iter == ")"){
             output.push_back(")");
             //cout << ")";
-            sym++;
+            token_iter++;
         }
         else{
             exit(1);
@@ -659,7 +658,7 @@ void FuncDef(vector<element> &elements){
     else{
         exit(1);
     }
-    if (*sym == "{"){
+    if (*token_iter == "{"){
         output.push_back("{\n");
         //cout << "{" << endl;
         Block(elements);
@@ -669,10 +668,10 @@ void FuncDef(vector<element> &elements){
 }
 
 void FuncType(){
-    if (*sym == "int"){
+    if (*token_iter == "int"){
         output.push_back("define dso_local i32 ");
         //cout << "define dso_local i32 ";
-        sym++;
+        token_iter++;
     }
     else{
         exit(1);
@@ -680,19 +679,19 @@ void FuncType(){
 }
 
 void Block(vector<element> &elements){
-    if (*sym == "{"){
+    if (*token_iter == "{"){
         level++;
         vector<element> sub_elements;
         sub_elements.assign(elements.begin(), elements.end());
-        sym++;
-        while (*sym != "}"){
+        token_iter++;
+        while (*token_iter != "}"){
             BlockItem(sub_elements);
-            if (sym == syms.end()){
+            if (token_iter == tokens.end()){
                 exit(1);
             }
         }
         level--;
-        sym++;
+        token_iter++;
     }
     else{
         exit(1);
@@ -700,7 +699,7 @@ void Block(vector<element> &elements){
 }
 
 void BlockItem(vector<element> &elements){
-    if (*sym == "const" || *sym == "int"){
+    if (*token_iter == "const" || *token_iter == "int"){
         Decl(elements);
     }
     else{
@@ -709,28 +708,28 @@ void BlockItem(vector<element> &elements){
 }
 
 void Stmt(vector<element> &elements){
-    if (isIdent(*sym) && !isFunc(*sym) && (*(sym + 1) == "=" || *(sym + 1) == "[")){
+    if (isIdent(*token_iter) && !isFunc(*token_iter) && (*(token_iter + 1) == "=" || *(token_iter + 1) == "[")){
         LVal(elements);
-        element elem = get_elem_by_name(elements, *sym);
+        element elem = get_elem_by_name(elements, *token_iter);
         if (elem.isConst){
             exit(1);
         }
         string reg;
         if (elem.type == "i32"){
             reg = elem.reg;
-            sym++;
+            token_iter++;
         }
         else{
-            sym++;
+            token_iter++;
             int dim = 0;
             string index[elem.dim];
-            while (*sym == "["){
-                sym++;
+            while (*token_iter == "["){
+                token_iter++;
                 Exp(elements, false);
                 index[dim] = rtn.first;
-                if (*sym == "]"){
+                if (*token_iter == "]"){
                     dim++;
-                    sym++;
+                    token_iter++;
                 }
                 else{
                     exit(1);
@@ -751,13 +750,13 @@ void Stmt(vector<element> &elements){
             memory.push(elem.reg);
             reg = "%x" + to_string(new_reg);
         }        
-        if (*sym == "="){
-            sym++;
+        if (*token_iter == "="){
+            token_iter++;
             Exp(elements, false);
             output.push_back("    store i32 " + rtn.first + ", i32* " + reg + "\n");
             //cout << "    store i32 " + rtn.first + ", i32* " + reg << endl;
-            if (*sym == ";"){
-                sym++;
+            if (*token_iter == ";"){
+                token_iter++;
             }
             else{
                 exit(1);
@@ -767,17 +766,17 @@ void Stmt(vector<element> &elements){
             exit(1);
         }
     }
-    else if (*sym == "{"){
+    else if (*token_iter == "{"){
         Block(elements);
     }
-    else if (*sym == "if"){
-        sym++;
-        if (*sym == "("){
-            sym++;
+    else if (*token_iter == "if"){
+        token_iter++;
+        if (*token_iter == "("){
+            token_iter++;
             int block_true, block_false, block_out;
             Cond(elements, block_true, block_false);
-            if (*sym == ")"){
-                sym++;
+            if (*token_iter == ")"){
+                token_iter++;
                 output.push_back("\nx" + to_string(block_true) + ":\n");
                 //cout << "\nx" + to_string(block_true) + ":" << endl;
                 Stmt(elements);
@@ -787,8 +786,8 @@ void Stmt(vector<element> &elements){
                 //cout << "    br label %x" + to_string(block_false) << endl;
                 output.push_back("\nx" + to_string(block_false) + ":\n");
                 //cout << "\nx" + to_string(block_false) + ":" << endl;
-                if (*sym == "else"){
-                    sym++;
+                if (*token_iter == "else"){
+                    token_iter++;
                     Stmt(elements);
                 }
                 output.push_back("    br label %x" + to_string(block_out) + "\n");
@@ -804,10 +803,10 @@ void Stmt(vector<element> &elements){
             exit(1);
         }
     }
-    else if (*sym == "while"){
-        sym++;
-        if (*sym == "("){
-            sym++;
+    else if (*token_iter == "while"){
+        token_iter++;
+        if (*token_iter == "("){
+            token_iter++;
             int block_cond, block_true, block_false;
             block_cond = memory.size();
             memory.push("block_cond");
@@ -816,8 +815,8 @@ void Stmt(vector<element> &elements){
             output.push_back("\nx" + to_string(block_cond) + ":\n");
             //cout << "\nx" + to_string(block_cond) + ":" << endl;
             Cond(elements, block_true, block_false);
-            if (*sym == ")"){
-                sym++;
+            if (*token_iter == ")"){
+                token_iter++;
                 int br_size = output.size(), cnt_size = output.size();
                 output.push_back("\nx" + to_string(block_true) + ":\n");
                 //cout << "\nx" + to_string(block_true) + ":" << endl;
@@ -847,45 +846,45 @@ void Stmt(vector<element> &elements){
             exit(1);
         }
     }
-    else if (*sym == "break"){
+    else if (*token_iter == "break"){
         output.push_back("break_record");
-        sym++;
-        if (*sym == ";"){
-            sym++;
+        token_iter++;
+        if (*token_iter == ";"){
+            token_iter++;
         }
         else{
             exit(1);
         }
     }
-    else if (*sym == "continue"){
+    else if (*token_iter == "continue"){
         output.push_back("continue_record");
-        sym++;
-        if (*sym == ";"){
-            sym++;
+        token_iter++;
+        if (*token_iter == ";"){
+            token_iter++;
         }
         else{
             exit(1);
         }
     }
-    else if (*sym == "return"){
-        sym++;
+    else if (*token_iter == "return"){
+        token_iter++;
         Exp(elements, false);
-        if (*sym == ";"){
+        if (*token_iter == ";"){
             output.push_back("    ret i32 " + rtn.first + "\n");
             //cout << "    ret i32 " + rtn.first << endl;
-            sym++;
+            token_iter++;
         }
         else{
             exit(1);
         }
     }
-    else if (*sym == ";"){
-        sym++;
+    else if (*token_iter == ";"){
+        token_iter++;
     }
     else{
         Exp(elements, false);
-        if (*sym == ";"){
-            sym++;
+        if (*token_iter == ";"){
+            token_iter++;
         }
         else{
             exit(1);
@@ -902,35 +901,35 @@ void Cond(vector<element> &elements, int &block_exec, int &block_false){
 }
 
 void LVal(vector<element> &elements){
-    if (!is_element(elements, *sym) && get_elem_by_name(elements, *sym).level < 0){
+    if (!is_element(elements, *token_iter) && get_elem_by_name(elements, *token_iter).level < 0){
         exit(1);
     }
 }
 
 void PrimaryExp(vector<element> &elements, bool isConst){
-    if (*sym == "("){
-        sym++;
+    if (*token_iter == "("){
+        token_iter++;
         Exp(elements, isConst);
-        if (*sym == ")"){
-            sym++;
+        if (*token_iter == ")"){
+            token_iter++;
         }
         else{
             exit(1);
         }
     }
-    else if (isnum(*sym)){
-        rtn.first = *sym;
+    else if (isnum(*token_iter)){
+        rtn.first = *token_iter;
         rtn.second = "i32";
-        sym++;
+        token_iter++;
     }
-    else if (isIdent(*sym)){
+    else if (isIdent(*token_iter)){
         LVal(elements);
-        element elem = get_elem_by_name(elements, *sym);
+        element elem = get_elem_by_name(elements, *token_iter);
         if (isConst){
             if (elem.isConst && elem.type == "i32"){
                 rtn.first = elem.reg;
                 rtn.second = "i32";
-                sym++;
+                token_iter++;
             }
             else{
                 exit(1);
@@ -941,19 +940,19 @@ void PrimaryExp(vector<element> &elements, bool isConst){
                 if (elem.type == "i32"){
                     rtn.first = elem.reg;
                     rtn.second = "i32";
-                    sym++;
+                    token_iter++;
                 }
                 else{
-                    sym++;
+                    token_iter++;
                     int dim = 0;
                     string index[elem.dim];
-                    while (*sym == "["){
-                        sym++;
+                    while (*token_iter == "["){
+                        token_iter++;
                         Exp(elements, false);
                         index[dim] = rtn.first;
-                        if (*sym == "]"){
+                        if (*token_iter == "]"){
                             dim++;
-                            sym++;
+                            token_iter++;
                         }
                         else{
                             exit(1);
@@ -989,19 +988,19 @@ void PrimaryExp(vector<element> &elements, bool isConst){
                     memory.push(elem.reg);
                     rtn.first = "%x" + to_string(new_reg);
                     rtn.second = "i32";
-                    sym++;
+                    token_iter++;
                 }
                 else{
-                    sym++;
+                    token_iter++;
                     int dim = 0;
                     string index[elem.dim];
-                    while (*sym == "["){
-                        sym++;
+                    while (*token_iter == "["){
+                        token_iter++;
                         Exp(elements, false);
                         index[dim] = rtn.first;
-                        if (*sym == "]"){
+                        if (*token_iter == "]"){
                             dim++;
-                            sym++;
+                            token_iter++;
                         }
                         else{
                             exit(1);
@@ -1037,15 +1036,15 @@ void PrimaryExp(vector<element> &elements, bool isConst){
 }
 
 void UnaryExp(vector<element> &elements, bool isConst){
-    if (*sym == "(" || isnum(*sym) || isIdent(*sym)){
-        if (isFunc(*sym)){
-            function func = get_func_by_name(*sym);
-            sym++;
-            if (*sym == "("){
-                sym++;
+    if (*token_iter == "(" || isnum(*token_iter) || isIdent(*token_iter)){
+        if (isFunc(*token_iter)){
+            function func = get_func_by_name(*token_iter);
+            token_iter++;
+            if (*token_iter == "("){
+                token_iter++;
                 string params;
                 FuncRParams(elements, func, params);
-                if (*sym == ")"){
+                if (*token_iter == ")"){
                     if (func.type == "i32"){
                         int new_reg = memory.size();
                         output.push_back("    %x" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")\n");
@@ -1058,7 +1057,7 @@ void UnaryExp(vector<element> &elements, bool isConst){
                         output.push_back("    call void @" + func.name + "(" + params + ")\n");
                         //cout << "    call void @" + func.name + "(" + params + ")" << endl;
                     }
-                    sym++;
+                    token_iter++;
                 }
                 else{
                     exit(1);
@@ -1072,9 +1071,9 @@ void UnaryExp(vector<element> &elements, bool isConst){
             PrimaryExp(elements, isConst);
         }
     }
-    else if (*sym == "+" || *sym == "-" || *sym == "!"){
-        bool minus = *sym == "-";
-        bool inverse = *sym == "!";
+    else if (*token_iter == "+" || *token_iter == "-" || *token_iter == "!"){
+        bool minus = *token_iter == "-";
+        bool inverse = *token_iter == "!";
         UnaryOp();
         UnaryExp(elements, isConst);
         if (minus){
@@ -1113,18 +1112,17 @@ void UnaryExp(vector<element> &elements, bool isConst){
 }
 
 void UnaryOp(){
-    if (*sym == "+" || *sym == "-" || *sym == "!"){
-        sym++;
+    if (*token_iter == "+" || *token_iter == "-" || *token_iter == "!"){
+        token_iter++;
     }
     else{
         exit(1);
     }
 }
 
-/* getarray & putarray unfinished */
 void FuncRParams(vector<element> &elements, function func, string &params){
     int argc = 0;
-    while (*sym != ")"){
+    while (*token_iter != ")"){
         Exp(elements, false);
         if (func.argv[argc] == rtn.second){
             params += (func.argv[argc] + " " + rtn.first);
@@ -1133,9 +1131,9 @@ void FuncRParams(vector<element> &elements, function func, string &params){
         else{
             exit(1);
         }
-        if (*sym == ","){
+        if (*token_iter == ","){
             params += ", ";
-            sym++;
+            token_iter++;
         }
     }
     if (argc != func.argc){
@@ -1146,10 +1144,10 @@ void FuncRParams(vector<element> &elements, function func, string &params){
 void MulExp(vector<element> &elements, bool isConst){
     UnaryExp(elements, isConst);
     string var1, var2;
-    while (*sym == "*" || *sym == "/" || *sym == "%"){
+    while (*token_iter == "*" || *token_iter == "/" || *token_iter == "%"){
         var1 = rtn.first;
-        string op = *sym;
-        sym++;
+        string op = *token_iter;
+        token_iter++;
         UnaryExp(elements, isConst);
         var2 = rtn.first;
         if (isConst){
@@ -1190,10 +1188,10 @@ void MulExp(vector<element> &elements, bool isConst){
 void AddExp(vector<element> &elements, bool isConst){
     MulExp(elements, isConst);
     string var1, var2;
-    while (*sym == "+" || *sym == "-"){
+    while (*token_iter == "+" || *token_iter == "-"){
         var1 = rtn.first;
-        string op = *sym;
-        sym++;
+        string op = *token_iter;
+        token_iter++;
         MulExp(elements, isConst);
         var2 = rtn.first;
         if (isConst){
@@ -1207,8 +1205,7 @@ void AddExp(vector<element> &elements, bool isConst){
             rtn.first = to_string(rtn_value);
             rtn.second = "i32";
         }
-        else
-        {
+        else{
             int new_reg = memory.size();
             if (op == "+"){
                 output.push_back("    %x" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
@@ -1228,10 +1225,10 @@ void AddExp(vector<element> &elements, bool isConst){
 void RelExp(vector<element> &elements){
     AddExp(elements, false);
     string var1, var2, var_temp = rtn.first;
-    while (*sym == "<" || *sym == ">" || *sym == "<=" || *sym == ">="){
+    while (*token_iter == "<" || *token_iter == ">" || *token_iter == "<=" || *token_iter == ">="){
         var1 = var_temp;
-        string op = *sym;
-        sym++;
+        string op = *token_iter;
+        token_iter++;
         AddExp(elements, false);
         var2 = rtn.first;
         var_temp = var2;
@@ -1268,10 +1265,10 @@ void RelExp(vector<element> &elements){
 void EqExp(vector<element> &elements){
     RelExp(elements);
     string var1, var2, var_temp = rtn.first;
-    while (*sym == "==" || *sym == "!="){
+    while (*token_iter == "==" || *token_iter == "!="){
         var1 = var_temp;
-        string op = *sym;
-        sym++;
+        string op = *token_iter;
+        token_iter++;
         RelExp(elements);
         var2 = rtn.first;
         var_temp = var2;
@@ -1311,8 +1308,8 @@ void LAndExp(vector<element> &elements, int &or_block_next){
     memory.push("upper_block_next_exec");
     output.push_back("    br i1 " + rtn.first + ", label %x" + to_string(block_next) + ", label %x" + to_string(or_block_next) + "\n");
     //cout << "    br i1 " + rtn.first + ", label %x" + to_string(block_next) + ", label %x" + to_string(or_block_next) << endl;
-    while (*sym == "&&"){
-        sym++;
+    while (*token_iter == "&&"){
+        token_iter++;
         output.push_back("\nx" + to_string(block_next) + ":\n");
         //cout << "\nx" + to_string(block_next) + ":" << endl;
         EqExp(elements);
@@ -1332,8 +1329,8 @@ void LOrExp(vector<element> &elements, int &block_true, int &block_false){
     memory.push("block_exec");
     output.push_back("    br i1 " + rtn.first + ", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
     //cout << "    br i1 " + rtn.first + ", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) << endl;
-    while (*sym == "||"){
-        sym++;
+    while (*token_iter == "||"){
+        token_iter++;
         output.push_back("\nx" + to_string(block_next) + ":\n");
         //cout << "\nx" + to_string(block_next) + ":" << endl;
         LAndExp(elements, block_next);
@@ -1355,8 +1352,8 @@ void LOrExp(vector<element> &elements, int &block_true, int &block_false){
 }
 
 void Ident(){
-    if (isIdent(*sym)){
-        sym++;
+    if (isIdent(*token_iter)){
+        token_iter++;
     }
     else{
         exit(1);
