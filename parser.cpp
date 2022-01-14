@@ -175,7 +175,6 @@ void CompUnit(){
         }
         else{
             output.push_back("\n");
-            //cout<<endl;
             FuncDef(symbols);
         }
     }
@@ -269,12 +268,10 @@ void ConstDef(stack<string> &memory, vector<symbol> &symbols){
         if (sym.type != "i32"){
             if (sym.level == 0){
                 output.push_back("@" + sym.name + " = dso_local constant ");
-                //cout << "@" + sym.name + " = dso_local constant ";
             }
             else{
                 sym.reg = "%x" + to_string(memory.size());
                 output.push_back("    " + sym.reg + " = alloca " + sym.type + "\n");
-                //cout << "    " + sym.reg + " = alloca " + sym.type << endl;
                 memory.push("");
             }
         }
@@ -289,7 +286,6 @@ void ConstDef(stack<string> &memory, vector<symbol> &symbols){
     else{
         if (sym.level == 0){
             output.push_back("\n");
-            //cout << endl;
             sym.reg = "@" + sym.name;
         }
     }
@@ -301,7 +297,6 @@ void ConstInitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
         ConstExp(memory, symbols);
         if (sym.name == "sub_sym"){
             output.push_back("i32 " + rtn.first);
-            //cout << "i32 " + rtn.first;
         }
     }
     else{
@@ -309,31 +304,25 @@ void ConstInitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
             if (*token_iter == "{"){
                 token_iter++;
                 output.push_back(sym.type);
-                //cout << sym.type;
                 if (*token_iter != "}"){
                     output.push_back(" [");
-                    //cout << " [";
                     int pos = sym.type.find("x") + 2, len = sym.type.length() - 1 - pos;
                     symbol sub_sym = {.name = "sub_sym", .isConst = true, .type = sym.type.substr(pos, len), .dim = sym.dim - 1, .level = sym.level, .reg = ""};
                     ConstInitVal(memory, symbols, sub_sym);
                     int i = 1, n = stoi(sym.type.substr(1, sym.type.find(" ") - 1), 0);
                     while (*token_iter == ","){
                         output.push_back(", ");
-                        //cout << ", ";
                         token_iter++;
                         ConstInitVal(memory, symbols, sub_sym);
                         i++;
                     }
                     while (i < n){
                         output.push_back(", " + sub_sym.type);
-                        //cout << ", ";
                         if (sub_sym.type == "i32"){
                             output.push_back(" 0");
-                            //cout << " 0";
                         }
                         else{
                             output.push_back(" zeroinitializer");
-                            //cout << " zeroinitializer";
                         }
                         i++;
                     }
@@ -341,11 +330,9 @@ void ConstInitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
                         exit(1);
                     }
                     output.push_back("]");
-                    //cout << "]";
                 }
                 else{
                     output.push_back(" zeroinitializer");
-                    //cout << " zeroinitializer";
                 }
                 if (*token_iter == "}"){
                     token_iter++;
@@ -361,17 +348,13 @@ void ConstInitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
         else{
             int new_reg = memory.size();
             output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0");
-            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0";
             for (int i = 0; i < sym.dim; i++){
                 output.push_back(", i32 0");
-                //cout << ", i32 0";
             }
             output.push_back("\n");
-            //cout << endl;
             memory.push(sym.reg);
             is_function_("memset");
             output.push_back("    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(sym.size * 4) + ")\n");
-            //cout << "    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(sym.size * 4) + ")" <<endl;
             int dim = -1, index[sym.dim] = {0};
             if(*token_iter == "{"){
                 dim++;
@@ -394,17 +377,13 @@ void ConstInitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
                     else{
                         new_reg = memory.size();
                         output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0");
-                        //cout << "    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0";
                         for (int i = 0; i < sym.dim; i++){
                             output.push_back(", i32 " + to_string(index[i]));
-                            //cout << ", i32 " + to_string(index[i]);
                         }
                         output.push_back("\n");
-                        //cout << endl;
                         memory.push(sym.reg);
                         ConstExp(memory, symbols);
                         output.push_back("    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) + "\n");
-                        //cout << "    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) <<endl;
                     }
                 }
             }
@@ -468,23 +447,18 @@ void VarDef(stack<string> &memory, vector<symbol> &symbols){
     if (sym.level == 0){
         sym.reg = "@" + sym.name;
         output.push_back(sym.reg + " = dso_local global ");
-        //cout << sym.reg + " = dso_local global ";
         if (sym.type == "i32"){
             output.push_back("i32 ");
-            //cout <<"i32 ";
         }
     }
     else{
         sym.reg = "%x" + to_string(memory.size());
         output.push_back("    " + sym.reg + " = alloca ");
-        //cout << "    " + sym.reg + " = alloca ";
         if (sym.type == "i32"){
             output.push_back("i32\n");
-            //cout << "i32" << endl;
         }
         else{
             output.push_back(sym.type + "\n");
-            //cout << sym.type << endl;
         }
         
         memory.push("");
@@ -494,18 +468,15 @@ void VarDef(stack<string> &memory, vector<symbol> &symbols){
         InitVal(memory, symbols, sym);
         if (sym.level == 0){
             output.push_back("\n");
-            //cout << endl;
         }
     }
     else{
         if (sym.level == 0){
             if (sym.type == "i32"){
                 output.push_back("0\n");
-                //cout << 0 << endl;
             }
             else{
                 output.push_back(sym.type + " zeroinitializer\n");
-                //cout << sym.type + " zeroinitializer" << endl;
             }
         }
     }
@@ -518,42 +489,34 @@ void InitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
             Exp(memory, symbols, true);
             if (sym.name != "sub_sym"){
                 output.push_back(rtn.first);
-                //cout << rtn.first;
             }
             else{
                 output.push_back("i32 " + rtn.first);
-                //cout << "i32 " + rtn.first;
             }
         }
         else{
             if (*token_iter == "{"){
                 token_iter++;
                 output.push_back(sym.type);
-                //cout << sym.type;
                 if (*token_iter != "}"){
                     output.push_back(" [");
-                    //cout << " [";
                     int pos = sym.type.find("x") + 2, len = sym.type.length() - 1 - pos;
                     symbol sub_sym = {.name = "sub_sym", .isConst = sym.isConst, .type = sym.type.substr(pos, len), .dim = sym.dim - 1, .level = sym.level, .reg = ""};
                     InitVal(memory, symbols, sub_sym);
                     int i = 1, n = stoi(sym.type.substr(1, sym.type.find(" ") - 1), 0);
                     while (*token_iter == ","){
                         output.push_back(", ");
-                        //cout << ", ";
                         token_iter++;
                         InitVal(memory, symbols, sub_sym);
                         i++;
                     }
                     while (i < n){
                         output.push_back(", " + sub_sym.type);
-                        //cout << ", " + sub_sym.type;
                         if (sub_sym.type == "i32"){
                             output.push_back(" 0");
-                            //cout << " 0";
                         }
                         else{
                             output.push_back(" zeroinitializer");
-                            //cout << " zeroinitializer";
                         }
                         i++;
                     }
@@ -561,11 +524,9 @@ void InitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
                         exit(1);
                     }
                     output.push_back("]");
-                    //cout << "]";
                 }
                 else{
                     output.push_back(" zeroinitializer");
-                    //cout << " zeroinitializer";
                 }
                 if (*token_iter == "}"){
                     token_iter++;
@@ -584,22 +545,17 @@ void InitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
         if (sym.type == "i32"){
             Exp(memory, symbols, false);
             output.push_back("    store i32 " + rtn.first + ", i32* " + sym.reg + "\n");
-            //cout << "    store i32 " + rtn.first + ", i32* " + sym.reg << endl;
         }
         else{
             int new_reg = memory.size();
             output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0");
-            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0";
             for (int i = 0; i < sym.dim; i++){
                 output.push_back(", i32 0");
-                //cout << ", i32 0";
             }
             output.push_back("\n");
-            //cout << endl;
             memory.push(sym.reg);
             is_function_("memset");
             output.push_back("    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(sym.size * 4) + ")\n");
-            //cout << "    call void @memset(i32* %x" + to_string(new_reg) + ", i32 0, i32 " + to_string(sym.size * 4) + ")" <<endl;
             int dim = -1, index[sym.dim] = {0};
             if(*token_iter == "{"){
                 dim++;
@@ -622,17 +578,13 @@ void InitVal(stack<string> &memory, vector<symbol> &symbols, symbol sym){
                     else{
                         new_reg = memory.size();
                         output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0");
-                        //cout << "    %x" + to_string(new_reg) + " = getelementptr " + sym.type + ", " + sym.type + "* " + sym.reg + ", i32 0";
                         for (int i = 0; i < sym.dim; i++){
                             output.push_back(", i32 " + to_string(index[i]));
-                            //cout << ", i32 " + to_string(index[i]);
                         }
                         output.push_back("\n");
-                        //cout << endl;
                         memory.push(sym.reg);
                         Exp(memory, symbols, false);
                         output.push_back("    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) + "\n");
-                        //cout << "    store i32 " + rtn.first + ", i32* %x" + to_string(new_reg) <<endl;
                     }
                 }
             }
@@ -653,17 +605,14 @@ void FuncDef(vector<symbol> &symbols){
     }
     func.name = name;
     output.push_back("@" + func.name);
-    //cout << "@" + func.name;
     stack<string> memory;
     vector<symbol> params;
     if (*token_iter == "("){
         output.push_back("(");
-        //cout << "(";
         token_iter++;
         FuncFParams(memory, symbols, func, params);
         if (*token_iter == ")"){
             output.push_back(")");
-            //cout << ")";
             token_iter++;
         }
         else{
@@ -677,14 +626,11 @@ void FuncDef(vector<symbol> &symbols){
     memory.push(func.name);
     if (*token_iter == "{"){
         output.push_back("{\n");
-        //cout << "{" << endl;
         for (int i = 0; i < func.argc; i++){
             int pos = symbols.size() - func.argc + i;
             int new_reg = memory.size();
             output.push_back("    %x" + to_string(new_reg) + " = alloca " + symbols[pos].type + "\n");
-            //cout << "    %x" + to_string(new_reg) + " = alloca " + symbols[pos].type << endl;
             output.push_back("    store " + symbols[pos].type + " " + symbols[pos].reg + ", " + symbols[pos].type + "* %x" + to_string(new_reg) + "\n");
-            //cout <<"    store " + symbols[pos].type + " " + symbols[pos].reg + ", " + symbols[pos].type + "* %x" + to_string(new_reg) << endl;
             memory.push(symbols[pos].reg);
             symbols[pos].reg = "%x" + to_string(new_reg);
         }
@@ -693,15 +639,12 @@ void FuncDef(vector<symbol> &symbols){
         if (no_return){
             if (!void_func){
                 output.push_back("    ret i32 0\n");
-                //cout << "    ret i32 0" << endl;
             }
             else{
                 output.push_back("    ret void\n");
-                //cout << "    ret void" << endl;
             }
         }
         output.push_back("}\n");
-        //cout << "}" << endl;
     }
 }
 
@@ -718,7 +661,6 @@ void FuncType(function &func){
         exit(1);
     }
     output.push_back("define dso_local " + func.type + " ");
-    //cout << "define dso_local " + func.type + " ";
     token_iter++;
 }
 
@@ -728,7 +670,6 @@ void FuncFParams(stack<string> &memory, vector<symbol> &symbols, function &func,
         func.argc++;
         if (*token_iter == ","){
             output.push_back(", ");
-            //cout << ", ";
             token_iter++;
         }
     }    
@@ -773,7 +714,6 @@ void FuncFParam(stack<string> &memory, vector<symbol> &symbols, function &func, 
     sym.level = level + 1;
     sym.reg = "%x" + to_string(memory.size());
     output.push_back(sym.type + " " + sym.reg);
-    //cout << sym.type + " " + sym.reg;
     memory.push("para");
     params.push_back(sym);
     func.argv.push_back(sym.type);
@@ -849,7 +789,6 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
             string type;
             if (sym.type.at(sym.type.length() - 1) == '*'){
                 output.push_back("    %x" + to_string(new_reg) + " = load " + sym.type + ", " + sym.type + "* " + sym.reg + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = load " + sym.type + ", " + sym.type + "* " + sym.reg << endl;
                 memory.push(sym.reg);
                 type = sym.type.substr(0, sym.type.length() - 1);
                 reg = "%x" + to_string(new_reg);
@@ -860,17 +799,13 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
                 reg = sym.reg;
             }
             output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + type + ", " + type + "* " + reg);
-            //cout << "    %x" + to_string(new_reg) + " = getelementptr " + type + ", " + type + "* " + reg;
             if (type != "i32"){
                 output.push_back(", i32 0");
-                //cout << ", i32 0";
             }
             for (int i = 0; i < dim; i++){
                 output.push_back(", i32 " + index[i]);
-                //cout << ", i32 " + index[i];
             }
             output.push_back("\n");
-            //cout << endl;
             memory.push(sym.reg);
             reg = "%x" + to_string(new_reg);
         }        
@@ -878,7 +813,6 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
             token_iter++;
             Exp(memory, symbols, false);
             output.push_back("    store i32 " + rtn.first + ", i32* " + reg + "\n");
-            //cout << "    store i32 " + rtn.first + ", i32* " + reg << endl;
             if (*token_iter == ";"){
                 token_iter++;
             }
@@ -902,22 +836,17 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
             if (*token_iter == ")"){
                 token_iter++;
                 output.push_back("\nx" + to_string(block_true) + ":\n");
-                //cout << "\nx" + to_string(block_true) + ":" << endl;
                 Stmt(memory, symbols);
                 block_out = memory.size();
                 memory.push("block_out");
                 output.push_back("    br label %x" + to_string(block_out) + "\n");
-                //cout << "    br label %x" + to_string(block_false) << endl;
                 output.push_back("\nx" + to_string(block_false) + ":\n");
-                //cout << "\nx" + to_string(block_false) + ":" << endl;
                 if (*token_iter == "else"){
                     token_iter++;
                     Stmt(memory, symbols);
                 }
                 output.push_back("    br label %x" + to_string(block_out) + "\n");
-                //cout << "    br label %x" + to_string(block_out) << endl;
                 output.push_back("\nx" + to_string(block_out) + ":\n");
-                //cout << "\nx" + to_string(block_out) + ":" << endl;
             }
             else{
                 exit(1);
@@ -935,32 +864,25 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
             block_cond = memory.size();
             memory.push("block_cond");
             output.push_back("    br label %x" + to_string(block_cond) + "\n");
-            //cout << "    br label %x" + to_string(block_cond) << endl;
             output.push_back("\nx" + to_string(block_cond) + ":\n");
-            //cout << "\nx" + to_string(block_cond) + ":" << endl;
             Cond(memory, symbols, block_true, block_false);
             if (*token_iter == ")"){
                 token_iter++;
                 int br_size = output.size(), cnt_size = output.size();
                 output.push_back("\nx" + to_string(block_true) + ":\n");
-                //cout << "\nx" + to_string(block_true) + ":" << endl;
                 Stmt(memory, symbols);
                 for (int i = br_size; i < output.size(); i++){
                     if (output[i] == "continue_record"){
                         output[i] = "    br label %x" + to_string(block_cond) + "\n";
-                        //cout << "    br label %x" + to_string(block_cond) << endl;
                     }
                 }
                 output.push_back("    br label %x" + to_string(block_cond) + "\n");
                 for (int i = cnt_size; i < output.size(); i++){
                     if (output[i] == "break_record"){
                         output[i] = "    br label %x" + to_string(block_false) + "\n";
-                        //cout << "    br label %x" + to_string(block_false) << endl;
                     }
                 }
-                //cout << "    br label %x" + to_string(block_cond) << endl;
                 output.push_back("\nx" + to_string(block_false) + ":\n");
-                //cout << "\nx" + to_string(block_false) + ":" << endl;
             }
             else{
                 exit(1);
@@ -1001,11 +923,9 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
         if (*token_iter == ";"){
             if (!void_func){
                 output.push_back("    ret i32 " + rtn.first + "\n");
-                //cout << "    ret i32 " + rtn.first << endl;
             }
             else{
                 output.push_back("    ret void\n");
-                //cout << "    ret void" << endl;
             }
             token_iter++;
         }
@@ -1100,7 +1020,6 @@ void PrimaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                     string reg, type;
                     if (sym.type.at(sym.type.length() - 1) == '*'){
                         output.push_back("    %x" + to_string(new_reg) + " = load " + sym.type + ", " + sym.type + "* " + sym.reg + "\n");
-                        //cout << "    %x" + to_string(new_reg) + " = load " + sym.type + ", " + sym.type + "* " + sym.reg << endl;
                         memory.push(sym.reg);
                         type = sym.type.substr(0, sym.type.length() - 1);
                         reg = "%x" + to_string(new_reg);
@@ -1111,22 +1030,17 @@ void PrimaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                         reg = sym.reg;
                     }
                     output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + type + ", " + type + "* " + reg);
-                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + type + ", " + type + "* " + reg;
                     if (sym.type.at(sym.type.length() - 1) != '*'){
                         output.push_back(", i32 0");
-                        //cout << ", i32 0";
                     }
                     for (int i = 0; i < dim; i++){
                         output.push_back(", i32 " + index[i]);
-                        //cout << ", i32 " + index[i];
                     }
                     output.push_back("\n");
-                    //cout << endl;
                     memory.push(reg);
                     int ptr_reg = new_reg;
                     new_reg = memory.size();
                     output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) + "\n");
-                    //cout << "    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) << endl;
                     memory.push("%x" + to_string(ptr_reg));
                     rtn.first = "%x" + to_string(new_reg);
                     rtn.second = "i32";
@@ -1136,7 +1050,6 @@ void PrimaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                 if (sym.type == "i32"){
                     int new_reg = memory.size();
                     output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* " + sym.reg + "\n");
-                    //cout << "    %x" + to_string(new_reg) + " = load i32, i32* " + sym.reg << endl;
                     memory.push(sym.reg);
                     rtn.first = "%x" + to_string(new_reg);
                     rtn.second = "i32";
@@ -1165,7 +1078,6 @@ void PrimaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                     string reg, type;
                     if (sym.type.at(sym.type.length() - 1) == '*'){
                         output.push_back("    %x" + to_string(new_reg) + " = load " + sym.type + ", " + sym.type + "* " + sym.reg + "\n");
-                        //cout << "    %x" + to_string(new_reg) + " = load " + sym.type + ", " + sym.type + "* " + sym.reg << endl;
                         memory.push(sym.reg);
                         type = sym.type.substr(0, sym.type.length() - 1);
                         reg = "%x" + to_string(new_reg);
@@ -1176,28 +1088,22 @@ void PrimaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                         reg = sym.reg;
                     }
                     output.push_back("    %x" + to_string(new_reg) + " = getelementptr " + type + ", " + type + "* " + reg);
-                    //cout << "    %x" + to_string(new_reg) + " = getelementptr " + type + ", " + type + "* " + reg;
                     if (sym.type.at(sym.type.length() - 1) != '*'){
                         output.push_back(", i32 0");
-                        //cout << ", i32 0";
                     }
                     for (int i = 0; i < dim; i++){
                         output.push_back(", i32 " + index[i]);
-                        //cout << ", i32 " + index[i];
                     }
                     if (dim < sym.dim){
                         output.push_back(", i32 0");
-                        //cout << ", i32 0";
                     }
                     output.push_back("\n");
-                    //cout << endl;
                     memory.push(reg);
                     
                     if (dim == sym.dim){
                         int ptr_reg = new_reg;
                         new_reg = memory.size();
                         output.push_back("    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) + "\n");
-                        //cout << "    %x" + to_string(new_reg) + " = load i32, i32* %x" + to_string(ptr_reg) << endl;
                         memory.push("%x" + to_string(ptr_reg));
                         rtn.first = "%x" + to_string(new_reg);
                         rtn.second = "i32";
@@ -1255,14 +1161,12 @@ void UnaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                     if (func.type == "i32"){
                         int new_reg = memory.size();
                         output.push_back("    %x" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")\n");
-                        //cout << "    %x" + to_string(new_reg) + " = call i32 @" + func.name + "(" + params + ")" << endl;
                         memory.push(func.name + "(" + params + ")");
                         rtn.first = "%x" + to_string(new_reg);
                         rtn.second = "i32";
                     }
                     else{
                         output.push_back("    call void @" + func.name + "(" + params + ")\n");
-                        //cout << "    call void @" + func.name + "(" + params + ")" << endl;
                     }
                     token_iter++;
                 }
@@ -1292,7 +1196,6 @@ void UnaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
             else{
                 int new_reg = memory.size();
                 output.push_back("    %x" + to_string(new_reg) + " = sub i32 0, " + rtn.first + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = sub i32 0, " + rtn.first << endl;
                 memory.push("-" + rtn.first);
                 rtn.first = "%x" + to_string(new_reg);
                 rtn.second = "i32";
@@ -1301,13 +1204,11 @@ void UnaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
         if (inverse){
             int new_reg = memory.size();
             output.push_back("    %x" + to_string(new_reg) + " = icmp eq i32 " + rtn.first + ", 0\n");
-            //cout << "    %x" + to_string(new_reg) + " = icmp eq i32 " + rtn.first + ", 0" << endl;
             memory.push("!" + rtn.first);
             rtn.first = "%x" + to_string(new_reg);
             rtn.second = "i1";
             new_reg = memory.size();
             output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32\n");
-            //cout << "    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32" << endl;
             memory.push(rtn.first + "to i32");
             rtn.first = "%x" + to_string(new_reg);
             rtn.second = "i32";
@@ -1375,15 +1276,12 @@ void MulExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
             int new_reg = memory.size();
             if (op == "*"){
                 output.push_back("    %x" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = mul i32 " + var1 + ", " + var2 << endl;
             }
             if (op == "/"){
                 output.push_back("    %x" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = sdiv i32 " + var1 + ", " + var2 << endl;
             }
             if (op == "%"){
                 output.push_back("    %x" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = srem i32 " + var1 + ", " + var2 << endl;
             }
             memory.push(var1 + op + var2);
             rtn.first = "%x" + to_string(new_reg);
@@ -1416,11 +1314,9 @@ void AddExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
             int new_reg = memory.size();
             if (op == "+"){
                 output.push_back("    %x" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = add i32 " + var1 + ", " + var2 << endl;
             }
             if (op == "-"){
                 output.push_back("    %x" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 + "\n");
-                //cout << "    %x" + to_string(new_reg) + " = sub i32 " + var1 + ", " + var2 << endl;
             }
             memory.push(var1 + op + var2);
             rtn.first = "%x" + to_string(new_reg);
@@ -1442,19 +1338,15 @@ void RelExp(stack<string> &memory, vector<symbol> &symbols){
         int new_reg = memory.size();
         if (op == "<"){
             output.push_back("    %x" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2 + "\n");
-            //cout << "    %x" + to_string(new_reg) + " = icmp slt i32 " + var1 + ", " + var2 << endl;
         }
         if (op == ">"){
             output.push_back("    %x" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2 + "\n");
-            //cout << "    %x" + to_string(new_reg) + " = icmp sgt i32 " + var1 + ", " + var2 << endl;
         }
         if (op == "<="){
             output.push_back("    %x" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2 + "\n");
-            //cout << "    %x" + to_string(new_reg) + " = icmp sle i32 " + var1 + ", " + var2 << endl;
         }
         if (op == ">="){
             output.push_back("    %x" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2 + "\n");
-            //cout << "    %x" + to_string(new_reg) + " = icmp sge i32 " + var1 + ", " + var2 << endl;
         }
         memory.push(var1 + op + var2);
         rtn.first = "%x" + to_string(new_reg);
@@ -1462,7 +1354,6 @@ void RelExp(stack<string> &memory, vector<symbol> &symbols){
 
         new_reg = memory.size();
         output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32\n");
-        //cout << "    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32" << endl;
         memory.push(rtn.first + "to i32");
         rtn.first = "%x" + to_string(new_reg);
         rtn.second = "i32";
@@ -1482,11 +1373,9 @@ void EqExp(stack<string> &memory, vector<symbol> &symbols){
         int new_reg = memory.size();
         if (op == "=="){
             output.push_back("    %x" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2 + "\n");
-            //cout << "    %x" + to_string(new_reg) + " = icmp eq i32 " + var1 + ", " + var2 << endl;
         }
         if (op == "!="){
             output.push_back("    %x" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2 + "\n");
-            //cout << "    %x" + to_string(new_reg) + " = icmp ne i32 " + var1 + ", " + var2 << endl;
         }
         memory.push(var1 + op + var2);
         rtn.first = "%x" + to_string(new_reg);
@@ -1494,14 +1383,12 @@ void EqExp(stack<string> &memory, vector<symbol> &symbols){
 
         new_reg = memory.size();
         output.push_back("    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32\n");
-        //cout << "    %x" + to_string(new_reg) + " = zext i1 " + rtn.first + " to i32" << endl;
         memory.push(rtn.first + "to i32");
         rtn.first = "%x" + to_string(new_reg);
         rtn.second = "i32";
     }
     int new_reg = memory.size();
     output.push_back("    %x" + to_string(new_reg) + " = icmp ne i32 " + rtn.first + ", 0\n");
-    //cout << "    %x" + to_string(new_reg) + " = icmp ne i32 " + rtn.first + ", 0" << endl;
     memory.push(rtn.first + "to i1");
     rtn.first = "%x" + to_string(new_reg);
     rtn.second = "i1";
@@ -1514,19 +1401,15 @@ void LAndExp(stack<string> &memory, vector<symbol> &symbols, int &or_block_next)
     or_block_next = memory.size();
     memory.push("upper_block_next_exec");
     output.push_back("    br i1 " + rtn.first + ", label %x" + to_string(block_next) + ", label %x" + to_string(or_block_next) + "\n");
-    //cout << "    br i1 " + rtn.first + ", label %x" + to_string(block_next) + ", label %x" + to_string(or_block_next) << endl;
     while (*token_iter == "&&"){
         token_iter++;
         output.push_back("\nx" + to_string(block_next) + ":\n");
-        //cout << "\nx" + to_string(block_next) + ":" << endl;
         EqExp(memory, symbols);
         block_next = memory.size();
         memory.push("block_next");
         output.push_back("    br i1 " + rtn.first + ", label %x" + to_string(block_next) + ", label %x" + to_string(or_block_next) + "\n");
-        //cout << "    br i1 " + rtn.first + ", label %x" + to_string(block_next) + ", label %x" + to_string(or_block_next) << endl;
     }
     output.push_back("\nx" + to_string(block_next) + ":\n");
-    //cout << "\nx" + to_string(block_next) + ":" << endl;
 }
 
 void LOrExp(stack<string> &memory, vector<symbol> &symbols, int &block_true, int &block_false){
@@ -1535,27 +1418,20 @@ void LOrExp(stack<string> &memory, vector<symbol> &symbols, int &block_true, int
     int block_exec = memory.size();
     memory.push("block_exec");
     output.push_back("    br i1 " + rtn.first + ", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
-    //cout << "    br i1 " + rtn.first + ", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) << endl;
     while (*token_iter == "||"){
         token_iter++;
         output.push_back("\nx" + to_string(block_next) + ":\n");
-        //cout << "\nx" + to_string(block_next) + ":" << endl;
         LAndExp(memory, symbols, block_next);
         output.push_back("    br i1 " + rtn.first + ", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) + "\n");
-        //cout << "    br i1 " + rtn.first + ", label %x" + to_string(block_exec) + ", label %x" + to_string(block_next) << endl;
     }
     output.push_back("\nx" + to_string(block_exec) + ":\n");
-    //cout << "\nx" + to_string(block_exec) + ":" << endl;
     block_true = memory.size();
     memory.push("block_true");
     output.push_back("    br label %x" + to_string(block_true) + "\n");
-    //cout << "    br label %x" + to_string(block_true) << endl;
     output.push_back("\nx" + to_string(block_next) + ":\n");
-    //cout << "\nx" + to_string(block_next) + ":" << endl;
     block_false = memory.size();
     memory.push("block_false");
     output.push_back("    br label %x" + to_string(block_false) + "\n");
-    //cout << "    br label %x" + to_string(block_false) << endl;
 }
 
 void Ident(){

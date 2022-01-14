@@ -48,11 +48,9 @@ int main(int argc, char *argv[]){
     ir.open(argv[2]);
     string line;
     while (getline(input, line)){
-        //cout << line << endl;
         istringstream line_split(line);
         string group;
         while (line_split >> group){
-            //cout << group << endl;
             if (!single_line_note && !multi_line_note){
                 check_note_start(group);
                 check_multi_note_end(group);
