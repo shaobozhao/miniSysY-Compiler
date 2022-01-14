@@ -1207,7 +1207,7 @@ void PrimaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                             if (type.at(i) == 'x'){
                                 count++;
                             }
-                            if (count == dim + 1){
+                            if (count > 0 && count == dim + 1){
                                 begin_pos = i + 2;
                                 break;
                             }                  
@@ -1217,7 +1217,7 @@ void PrimaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
                             if (type.at(i) == ']'){
                                 count++;
                             }
-                            if (count == dim + 1){
+                            if (count > 0 && count == dim + 1){
                                 end_pos = i - 1;
                                 break;
                             }                  
