@@ -1237,6 +1237,9 @@ void UnaryExp(stack<string> &memory, vector<symbol> &symbols, bool isConst){
     if (*token_iter == "(" || isnum(*token_iter) || isIdent(*token_iter)){
         if (is_function_(*token_iter)){
             function func = get_func_by_name(*token_iter);
+            if (*(token_iter - 1) == "=" && func.type != "i32"){
+                exit(1);
+            }
             token_iter++;
             if (*token_iter == "("){
                 token_iter++;
