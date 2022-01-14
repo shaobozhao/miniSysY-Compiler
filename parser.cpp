@@ -691,10 +691,6 @@ void FuncDef(vector<symbol> &symbols){
             symbols[pos].reg = "%x" + to_string(new_reg);
         }
         Block(memory, symbols);
-        if (void_func && no_return){
-            output.push_back("    ret void\n");
-            //cout << "    ret void" << endl;
-        }
         output.push_back("}\n");
         //cout << "}" << endl;
     }
@@ -708,7 +704,6 @@ void FuncType(function &func){
     else if (*token_iter == "void"){
         func.type = "void";
         void_func = true;
-        no_return = true;
     }
     else{
         exit(1);
@@ -781,6 +776,7 @@ void Block(stack<string> &memory, vector<symbol> &symbols){
         level++;
         vector<symbol> sub_symbols;
         sub_symbols.assign(symbols.begin(), symbols.end());
+        no_return = true;
         token_iter++;
         while (*token_iter != "}"){
             BlockItem(memory, sub_symbols);
@@ -788,6 +784,17 @@ void Block(stack<string> &memory, vector<symbol> &symbols){
                 exit(1);
             }
         }
+        if (no_return){
+            if (!void_func){
+                output.push_back("    ret i32 0\n");
+                //cout << "    ret i32 0" << endl;
+            }
+            else{
+                output.push_back("    ret void\n");
+                //cout << "    ret void" << endl;
+            }
+        }
+        no_return = true;
         int pos = symbols.size() - 1;
         while (!symbols.empty() && symbols[pos].level == level){
             symbols.pop_back();
@@ -992,12 +999,12 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
             Exp(memory, symbols, false);
         }
         if (*token_iter == ";"){
+            no_return = false;
             if (!void_func){
                 output.push_back("    ret i32 " + rtn.first + "\n");
                 //cout << "    ret i32 " + rtn.first << endl;
             }
             else{
-                no_return = false;
                 output.push_back("    ret void\n");
                 //cout << "    ret void" << endl;
             }
