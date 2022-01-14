@@ -3,38 +3,38 @@
 #include <sstream>
 #include <cstdio>
 #include "lexer.cpp"
-#include "grammar.cpp"
+#include "parser.cpp"
 
 using namespace std;
 
 bool single_line_note;
 bool multi_line_note;
 
-void check_note_start(string token){
-    size_t single_start_location = token.find("//");
-    size_t multi_start_location = token.find("/*");
+void check_note_start(string group){
+    size_t single_start_location = group.find("//");
+    size_t multi_start_location = group.find("/*");
     if (single_start_location != string::npos){
-        if (token != "//" && single_start_location != 0){
-            process(token.substr(0, single_start_location));
+        if (group != "//" && single_start_location != 0){
+            process(group.substr(0, single_start_location));
         }
         single_line_note = true;
     }
     else if (multi_start_location != string::npos){
-        if (token != "/*" && multi_start_location != 0){
-            process(token.substr(0, multi_start_location));
+        if (group != "/*" && multi_start_location != 0){
+            process(group.substr(0, multi_start_location));
         }
         multi_line_note = true;
     }
     else{
-        process(token);
+        process(group);
     }
 }
 
-void check_multi_note_end(string token){
-    size_t multi_end_location = token.find("*/");
+void check_multi_note_end(string group){
+    size_t multi_end_location = group.find("*/");
     if (multi_end_location != string::npos){
-        if (token != "*/" && multi_end_location < token.length() - 2){
-            process(token.substr(multi_end_location + 2));
+        if (group != "*/" && multi_end_location < group.length() - 2){
+            process(group.substr(multi_end_location + 2));
         }
         multi_line_note = false;
         return;
@@ -50,24 +50,24 @@ int main(int argc, char *argv[]){
     while (getline(input, line)){
         //cout << line << endl;
         istringstream line_split(line);
-        string token;
-        while (line_split >> token){
-            //cout << token << endl;
+        string group;
+        while (line_split >> group){
+            //cout << group << endl;
             if (!single_line_note && !multi_line_note){
-                check_note_start(token);
-                check_multi_note_end(token);
+                check_note_start(group);
+                check_multi_note_end(group);
             }
             else if (!single_line_note && multi_line_note){
-                check_multi_note_end(token);
+                check_multi_note_end(group);
             }
             else;
         }
         line_split.str("");
         single_line_note = false;
     }
-    sym = syms.begin();
+    token_iter = tokens.begin();
     CompUnit();
-    if (sym == syms.end() && !multi_line_note){
+    if (token_iter == tokens.end() && !multi_line_note){
         for (int i = 0; i < output.size(); i++){
             ir << output[i];
         }

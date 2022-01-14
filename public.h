@@ -8,9 +8,9 @@
 
 using namespace std;
 
-vector<string> syms;
+vector<string> tokens;
 
-vector<string>::iterator sym;
+vector<string>::iterator token_iter;
 
 vector<string> output;
 
