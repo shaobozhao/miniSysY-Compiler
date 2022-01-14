@@ -690,7 +690,18 @@ void FuncDef(vector<symbol> &symbols){
             memory.push(symbols[pos].reg);
             symbols[pos].reg = "%x" + to_string(new_reg);
         }
+        no_return = true;
         Block(memory, symbols);
+        if (no_return){
+            if (!void_func){
+                output.push_back("    ret i32 0\n");
+                //cout << "    ret i32 0" << endl;
+            }
+            else{
+                output.push_back("    ret void\n");
+                //cout << "    ret void" << endl;
+            }
+        }
         output.push_back("}\n");
         //cout << "}" << endl;
     }
@@ -776,7 +787,6 @@ void Block(stack<string> &memory, vector<symbol> &symbols){
         level++;
         vector<symbol> sub_symbols;
         sub_symbols.assign(symbols.begin(), symbols.end());
-        no_return = true;
         token_iter++;
         while (*token_iter != "}"){
             BlockItem(memory, sub_symbols);
@@ -784,17 +794,6 @@ void Block(stack<string> &memory, vector<symbol> &symbols){
                 exit(1);
             }
         }
-        if (no_return){
-            if (!void_func){
-                output.push_back("    ret i32 0\n");
-                //cout << "    ret i32 0" << endl;
-            }
-            else{
-                output.push_back("    ret void\n");
-                //cout << "    ret void" << endl;
-            }
-        }
-        no_return = true;
         int pos = symbols.size() - 1;
         while (!symbols.empty() && symbols[pos].level == level){
             symbols.pop_back();
@@ -999,7 +998,9 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
             Exp(memory, symbols, false);
         }
         if (*token_iter == ";"){
-            no_return = false;
+            if (level == 1){
+                no_return = false;
+            }
             if (!void_func){
                 output.push_back("    ret i32 " + rtn.first + "\n");
                 //cout << "    ret i32 " + rtn.first << endl;
