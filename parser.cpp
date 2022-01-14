@@ -56,7 +56,37 @@ void LAndExp(stack<string> &memory, vector<symbol> &symbols, int &or_block_next)
 void LOrExp(stack<string> &memory, vector<symbol> &symbols, int &block_exec, int &block_false);
 void Ident();
 
+const function getint = {.name = "getint", .type = "i32", .argc = 0, .argv = {}},
+               getch = {.name = "getch", .type = "i32", .argc = 0, .argv = {}},
+               getarray = {.name = "getarray", .type = "i32", .argc = 1, .argv = {"i32*"}},
+               putint = {.name = "putint", .type = "void", .argc = 1, .argv = {"i32"}},
+               putch = {.name = "putch", .type = "void", .argc = 1, .argv = {"i32"}},
+               putarray = {.name = "putarray", .type = "void", .argc = 2, .argv = {"i32", "i32*"}},
+               memset = {.name = "memset", .type = "void", .argc = 3, .argv = {"i32*", "i32", "i32"}};
+
+const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putarray, memset};
+
+vector<function> functions;
+bool void_func, no_return;
 int level;
+pair<string, string> rtn;
+
+bool isnum(const string &str){
+    return str.find_first_not_of("0123456789") == string::npos;
+}
+
+bool isIdent(const string &str){
+    bool nondigit = (isalpha(str.at(0)) || str.at(0) == '_');
+    for (int i = 1; i < str.length(); i++){
+        if (!isalnum(str.at(i)) && str.at(i) != '_'){
+            return false;
+        }
+    }
+    bool reserved = str != "const" && str != "int" && str != "void" &&
+                    str != "if" && str != "else" && str != "while" &&
+                    str != "break" && str != "continue" && str != "return";
+    return nondigit && reserved;
+}
 
 bool is_symbol(vector<symbol> &symbols, const string &str){
     auto sym_iter = find_if(symbols.begin(), symbols.end(), [str](symbol sym){
@@ -85,34 +115,6 @@ symbol get_sym_by_name(vector<symbol> &symbols, string name){
         }
     }
     return sym;
-}
-
-const function getint = {.name = "getint", .type = "i32", .argc = 0, .argv = {}},
-               getch = {.name = "getch", .type = "i32", .argc = 0, .argv = {}},
-               getarray = {.name = "getarray", .type = "i32", .argc = 1, .argv = {"i32*"}},
-               putint = {.name = "putint", .type = "void", .argc = 1, .argv = {"i32"}},
-               putch = {.name = "putch", .type = "void", .argc = 1, .argv = {"i32"}},
-               putarray = {.name = "putarray", .type = "void", .argc = 2, .argv = {"i32", "i32*"}},
-               memset = {.name = "memset", .type = "void", .argc = 3, .argv = {"i32*", "i32", "i32"}};
-
-const vector<function> miniSysY = {getint, getch, getarray, putint, putch, putarray, memset};
-
-vector<function> functions;
-bool void_func, no_return;
-
-pair<string, string> rtn;
-
-bool isIdent(const string &str){
-    bool nondigit = (isalpha(str.at(0)) || str.at(0) == '_');
-    for (int i = 1; i < str.length(); i++){
-        if (!isalnum(str.at(i)) && str.at(i) != '_'){
-            return false;
-        }
-    }
-    bool reserved = str != "const" && str != "int" && str != "void" &&
-                    str != "if" && str != "else" && str != "while" &&
-                    str != "break" && str != "continue" && str != "return";
-    return nondigit && reserved;
 }
 
 bool is_function_(const string &str){
@@ -162,10 +164,6 @@ function get_func_by_name(string name){
         }
     }
     return func;
-}
-
-bool isnum(const string &str){
-    return str.find_first_not_of("0123456789") == string::npos;
 }
 
 void CompUnit(){
