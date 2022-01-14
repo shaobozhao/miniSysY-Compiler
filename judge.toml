@@ -1,4 +1,4 @@
-[jobs.short_circuit]
+[jobs.x]
 
 image = { source = "dockerfile", path = "." }
 
