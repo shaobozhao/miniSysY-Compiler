@@ -991,14 +991,14 @@ void Stmt(stack<string> &memory, vector<symbol> &symbols){
         }
     }
     else if (*token_iter == "return"){
+        if (level == 1 && !(*(token_iter - 1) == ")" || *(token_iter - 1) == "else")){
+            no_return = false;
+        }
         token_iter++;
         if (!void_func){
             Exp(memory, symbols, false);
         }
         if (*token_iter == ";"){
-            if (level == 1){
-                no_return = false;
-            }
             if (!void_func){
                 output.push_back("    ret i32 " + rtn.first + "\n");
                 //cout << "    ret i32 " + rtn.first << endl;
